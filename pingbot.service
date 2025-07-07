@@ -1,0 +1,12 @@
+[Unit]
+Description=Telegram Moderation Bot
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/pingbot
+ExecStart=/usr/bin/python3 -m run
+Restart=always
+EnvironmentFile=/opt/pingbot/.env
+
+[Install]
+WantedBy=multi-user.target

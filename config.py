@@ -1,8 +1,19 @@
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+
 class Config:
-    API_ID = 12345
-    API_HASH = "your_api_hash"
-    BOT_TOKEN = "your_bot_token"
-    MONGO_URI = "mongodb://localhost:27017"
-    LOG_CHANNEL = -1001234567890
-    OWNER_ID = 123456789
-    PERSPECTIVE_API_KEY = "your_perspective_key"
+    """Configuration loaded from environment variables."""
+
+    API_ID = int(os.getenv("API_ID", "0"))
+    API_HASH = os.getenv("API_HASH", "")
+    BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+    MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+    LOG_CHANNEL = int(os.getenv("LOG_CHANNEL_ID", "0"))
+    OWNER_ID = int(os.getenv("OWNER_ID", "0"))
+    PERSPECTIVE_API_KEY = os.getenv("PERSPECTIVE_API_KEY", "")
+    SIGHTENGINE_USER = os.getenv("SIGHTENGINE_USER", "")
+    SIGHTENGINE_SECRET = os.getenv("SIGHTENGINE_SECRET", "")
