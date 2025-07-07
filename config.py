@@ -27,7 +27,22 @@ class Config:
     PERSPECTIVE_API_KEY = os.getenv("PERSPECTIVE_API_KEY", "")
     IMAGE_MOD_API_KEY = os.getenv("IMAGE_MOD_API_KEY", "")
 
-    DATABASE_URL = os.getenv("DATABASE_URL", "bot.db")
+    # Prefer DB_FILE to avoid clashing with hosting providers that predefine
+    # DATABASE_URL for Postgres connections (e.g. Render.com). Fallback to
+    # DATABASE_URL if provided and looks like a file path.
+    _db_file = os.getenv("DB_FILE")
+    _db_url = os.getenv("DATABASE_URL", "bot.db")
+    if _db_file:
+        DATABASE_URL = _db_file
+    elif _db_url.startswith("postgres://") or _db_url.startswith("postgresql://"):
+        logger.warning(
+            "Ignoring external DATABASE_URL=%s; using local SQLite db. "
+            "Set DB_FILE to override.",
+            _db_url,
+        )
+        DATABASE_URL = "bot.db"
+    else:
+        DATABASE_URL = _db_url
 
     _sight = IMAGE_MOD_API_KEY.split(":", 1)
     SIGHTENGINE_USER = _sight[0] if _sight else ""

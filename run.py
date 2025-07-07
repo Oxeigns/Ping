@@ -1,4 +1,5 @@
 import asyncio
+import os
 import logging
 import sys
 import pkg_resources
@@ -39,7 +40,11 @@ async def main():
 
     log_versions()
 
-    db = await aiosqlite.connect(Config.DATABASE_URL)
+    db_path = Config.DATABASE_URL
+    # Ensure parent directory exists when using a filesystem path
+    if not db_path.startswith("file:") and db_path != ":memory:":
+        os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
+    db = await aiosqlite.connect(db_path, uri=db_path.startswith("file:"))
     db.row_factory = aiosqlite.Row
     await init_db(db)
     app.db = db
