@@ -13,7 +13,7 @@ import moderation
 from database import init_db
 from config import Config
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
