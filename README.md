@@ -18,9 +18,10 @@ A modular Telegram bot built with **Pyrogram** for automated AI-powered moderati
 - `/broadcast <text>` – owner broadcast
 
 ## Setup
-1. Copy `.env.example` to `.env` and fill the values.
-2. Install requirements with `pip install -r requirements.txt`.
-3. Run with `python -m run`.
+1. Install **Python 3.11** and create a virtual environment (optional).
+2. Copy `.env.example` to `.env` and fill the values.
+3. Install requirements with `pip install -r requirements.txt`.
+4. Run with `python -m run`.
 
 ### VPS (systemd)
 Place `pingbot.service` in `/etc/systemd/system/`, adjust paths, then:
@@ -31,7 +32,7 @@ sudo systemctl start pingbot
 ```
 
 ### Render.com
-Create a new Web Service and point it to this repository. Render will use `render.yaml` for configuration.
+Create a new Web Service pointing to this repository. Render uses `render.yaml` for configuration and defaults to the latest Python version. Because this project targets **Python 3.11**, the repository includes a `runtime.txt` file to pin the deployment version.
 
 ## API Keys
 - [Perspective API](https://www.perspectiveapi.com/) for toxicity detection
