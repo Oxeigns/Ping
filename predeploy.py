@@ -22,7 +22,7 @@ try:
 except Exception as exc:
     raise SystemExit(f"Pillow import failed: {exc}")
 
-modules = ["handlers.admin", "handlers.general", "moderation"]
+modules = ["handlers.admin", "handlers.start", "moderation"]
 for name in modules:
     importlib.import_module(name)
 
