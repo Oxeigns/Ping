@@ -48,7 +48,17 @@ async def process_violation(client, message: Message, user_id: int, score: float
 
 
 def register(app):
-    @app.on_message(filters.text | filters.photo)
+    @app.on_message(
+        (
+            filters.text
+            | filters.photo
+            | filters.sticker
+            | filters.animation
+            | filters.video
+            | filters.document
+        )
+        & ~filters.service
+    )
     @catch_errors
     async def moderate_messages(client, message: Message):
         if not message.from_user or message.from_user.is_self:
@@ -63,8 +73,19 @@ def register(app):
                 await process_violation(client, message, message.from_user.id, score, "toxicity")
                 return
 
-        if message.photo:
-            file = await client.download_media(message.photo.file_id, in_memory=True)
+        if message.photo or (
+            message.document
+            and message.document.mime_type
+            and message.document.mime_type.startswith("image/")
+        ) or (
+            message.sticker and not (message.sticker.is_animated or message.sticker.is_video)
+        ):
+            target = (
+                message.photo
+                or message.document
+                or message.sticker
+            )
+            file = await client.download_media(target.file_id, in_memory=True)
             result = await check_image(file)
             nudity = result.get("nudity", {}).get("sexual_activity", 0)
             drugs = result.get("drug", 0)
