@@ -25,7 +25,15 @@ def register(app):
         keyboard = InlineKeyboardMarkup(
             [[InlineKeyboardButton("Close", callback_data="close")]]
         )
-        await message.reply_text(text, reply_markup=keyboard, disable_web_page_preview=True)
+        try:
+            photo = await client.download_media(target.photo.big_file_id, in_memory=True)
+        except Exception:
+            photo = None
+
+        if photo:
+            await message.reply_photo(photo, caption=text, reply_markup=keyboard)
+        else:
+            await message.reply_text(text, reply_markup=keyboard, disable_web_page_preview=True)
 
     @app.on_callback_query(filters.regex("^close$"))
     async def close_cb(client, callback):

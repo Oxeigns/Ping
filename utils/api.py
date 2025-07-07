@@ -30,3 +30,22 @@ async def check_toxicity(text: str) -> float:
     except Exception as exc:
         logger.error("Perspective API error: %s", exc)
         return 0.0
+
+
+async def check_image(file: bytes) -> dict:
+    """Return NSFW probabilities from Sightengine."""
+    url = "https://api.sightengine.com/1.0/check.json"
+    params = {
+        "models": "nudity,wad",
+        "api_user": Config.SIGHTENGINE_USER,
+        "api_secret": Config.SIGHTENGINE_SECRET,
+    }
+    data = aiohttp.FormData()
+    data.add_field("media", file, filename="image.jpg", content_type="image/jpeg")
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, data=data, params=params, timeout=10) as resp:
+                return await resp.json()
+    except Exception as exc:
+        logger.error("Sightengine API error: %s", exc)
+        return {}

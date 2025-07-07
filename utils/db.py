@@ -26,6 +26,13 @@ async def add_warning(db, user_id: int, score: float) -> Dict[str, Any]:
     return user
 
 
+async def approve_user(db, user_id: int, value: bool) -> Dict[str, Any]:
+    user = await get_or_create_user(db, user_id)
+    user["approved"] = value
+    await db.users.replace_one({"_id": user_id}, user, upsert=True)
+    return user
+
+
 async def update_violation(db, user_id: int, score_delta: float, action: str) -> Dict[str, Any]:
     user = await get_or_create_user(db, user_id)
     user["global_toxicity_score"] += score_delta
