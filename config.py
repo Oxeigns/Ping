@@ -1,7 +1,11 @@
 import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+logger = logging.getLogger(__name__)
 
 
 class Config:
@@ -12,7 +16,13 @@ class Config:
     BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
     OWNER_ID = int(os.getenv("OWNER_ID", "1888832817"))
-    LOG_CHANNEL = int(os.getenv("LOG_CHANNEL_ID", "-1002867268050"))
+
+    _log_id = os.getenv("LOG_CHANNEL_ID", "-1002867268050")
+    try:
+        LOG_CHANNEL = int(_log_id)
+    except ValueError:
+        LOG_CHANNEL = -1002867268050
+        logger.warning("Invalid LOG_CHANNEL_ID %r, falling back to %d", _log_id, LOG_CHANNEL)
 
     PERSPECTIVE_API_KEY = os.getenv("PERSPECTIVE_API_KEY", "")
     IMAGE_MOD_API_KEY = os.getenv("IMAGE_MOD_API_KEY", "")
