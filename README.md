@@ -14,6 +14,7 @@ A modular Telegram bot built with **Pyrogram** for automated AI-powered moderati
 ## Commands
 - `/start` `/menu` `/help` – show control panel
 - `/profile` – view user profile
+- `/ping` – check bot status
 - `/approve` `/unapprove` `/approved` `/rmwarn` – admin tools
 - `/broadcast <text>` – owner broadcast
 
