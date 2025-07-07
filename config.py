@@ -11,8 +11,8 @@ class Config:
     API_HASH = os.getenv("API_HASH", "")
     BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
-    OWNER_ID = int(os.getenv("OWNER_ID", "0"))
-    LOG_CHANNEL = int(os.getenv("LOG_CHANNEL_ID", "0"))
+    OWNER_ID = int(os.getenv("OWNER_ID", "1888832817"))
+    LOG_CHANNEL = int(os.getenv("LOG_CHANNEL_ID", "-1002867268050"))
 
     PERSPECTIVE_API_KEY = os.getenv("PERSPECTIVE_API_KEY", "")
     IMAGE_MOD_API_KEY = os.getenv("IMAGE_MOD_API_KEY", "")
