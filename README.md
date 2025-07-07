@@ -28,23 +28,4 @@ Place `pingbot.service` in `/etc/systemd/system/`, adjust paths, then:
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable pingbot
-sudo systemctl start pingbot
-```
-
-### Render.com
-Create a new Web Service pointing to this repository. Render uses `render.yaml` for configuration. Render defaults to the latest Python version which may be incompatible with pinned dependencies. This project targets **Python 3.11**, so the repository includes a `runtime.txt` file to explicitly set the Python version during deployment.
-## API Keys
-- [Perspective API](https://www.perspectiveapi.com/) for toxicity detection
-- [Sightengine](https://sightengine.com/) for image moderation
-
-
-### Environment Variables
-Edit `.env` with the following keys:
-
-- `BOT_TOKEN` – Telegram bot token
-- `API_ID` / `API_HASH` – Telegram API credentials
-- `OWNER_ID` – your Telegram user ID
-- `LOG_CHANNEL_ID` – channel/group ID for logs
-- `PERSPECTIVE_API_KEY` – Google Perspective API key
-- `IMAGE_MOD_API_KEY` – Sightengine credentials `user:secret`
-- `DATABASE_URL` – path to SQLite DB (or Postgres URI)
+sudo systemctl start 
