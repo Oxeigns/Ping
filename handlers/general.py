@@ -1,24 +1,31 @@
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
-from utils import catch_errors, safe_edit, get_or_create_user
+from helpers import catch_errors, safe_edit, get_or_create_user
+from config import Config
+from pyrogram.errors import MessageNotModified
 
 
 def register(app):
-    @app.on_message(filters.command("start"))
-    @catch_errors
-    async def start_handler(client, message: Message):
-        keyboard = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Profile", callback_data="open_profile")]]
-        )
-        await message.reply_text(
-            "Hello! I'm a moderation bot.", reply_markup=keyboard
+    def main_menu():
+        return InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("\ud83d\udcca View My Profile", callback_data="open_profile")],
+                [InlineKeyboardButton("\ud83d\udd27 Configure Group", callback_data="settings")],
+                [InlineKeyboardButton("\ud83d\udce2 Broadcast", callback_data="bc")],
+                [InlineKeyboardButton("\ud83d\udcdc Help", callback_data="help")],
+                [InlineKeyboardButton("\ud83d\udc68\u200d\ud83d\udcbb Developer", url="https://t.me/{0}".format("Oxeign"))],
+            ]
         )
 
-    @app.on_message(filters.command("help"))
+    @app.on_message(filters.command(["start", "menu", "help"]))
     @catch_errors
-    async def help_handler(client, message: Message):
-        await message.reply_text("Help menu")
+    async def start_handler(client, message: Message):
+        await message.reply_text(
+            "**Welcome to the Moderation Bot**",
+            reply_markup=main_menu(),
+            disable_web_page_preview=True,
+        )
 
     @app.on_message(filters.command("ping"))
     @catch_errors
@@ -31,7 +38,7 @@ def register(app):
         text = (
             f"**{callback.from_user.first_name}**\n"
             f"ID: `{callback.from_user.id}`\n"
-            f"Toxicity: {user['global_toxicity_score']:.2f}\n"
+            f"Toxicity: {user['global_toxicity']:.2f}\n"
             f"Warnings: {user['warnings']}"
         )
         await callback.message.edit_text(

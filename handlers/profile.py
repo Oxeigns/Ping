@@ -1,14 +1,14 @@
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
-from utils import catch_errors, get_or_create_user
+from helpers import catch_errors, get_or_create_user
 
 
 def build_profile_text(user, tg_user):
     text = [
         f"**{tg_user.first_name}**",
         f"ID: `{tg_user.id}`",
-        f"Toxicity: {user['global_toxicity_score']:.2f}",
+        f"Toxicity: {user['global_toxicity']:.2f}",
         f"Warnings: {user['warnings']}",
         f"Approved: {'Yes' if user.get('approved') else 'No'}",
     ]
@@ -25,7 +25,15 @@ def register(app):
         keyboard = InlineKeyboardMarkup(
             [[InlineKeyboardButton("Close", callback_data="close")]]
         )
-        await message.reply_text(text, reply_markup=keyboard, disable_web_page_preview=True)
+        try:
+            photo = await client.download_media(target.photo.big_file_id, in_memory=True)
+        except Exception:
+            photo = None
+
+        if photo:
+            await message.reply_photo(photo, caption=text, reply_markup=keyboard)
+        else:
+            await message.reply_text(text, reply_markup=keyboard, disable_web_page_preview=True)
 
     @app.on_callback_query(filters.regex("^close$"))
     async def close_cb(client, callback):

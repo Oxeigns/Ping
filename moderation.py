@@ -1,31 +1,114 @@
+import logging
+
 from pyrogram import filters
-from pyrogram.types import Message, ChatPermissions
+from pyrogram.enums import ChatMemberStatus
+from pyrogram.types import ChatMemberUpdated, ChatPermissions, Message
 
-from utils import add_warning, catch_errors, check_toxicity
+from config import Config
+from helpers import (
+    add_warning,
+    add_log,
+    catch_errors,
+    check_image,
+    check_toxicity,
+    get_or_create_user,
+    is_admin,
+)
 
-BANNED_WORDS = {"badword", "hate"}
-TOXICITY_THRESHOLD = 0.8
+logger = logging.getLogger(__name__)
+
+TOXICITY_THRESHOLD = 0.85
+NSFW_THRESHOLD = 0.85
 WARN_THRESHOLD = 3
 
 
+async def process_violation(client, message: Message, user_id: int, score: float, reason: str):
+    try:
+        await message.delete()
+    except Exception:
+        pass
+    user = await add_warning(client.db, user_id, score)
+    await add_log(client.db, user_id, message.chat.id, reason, score)
+    if user["warnings"] >= WARN_THRESHOLD:
+        try:
+            await message.chat.restrict(user_id, ChatPermissions())
+            await client.send_message(
+                message.chat.id,
+                f"User {user_id} muted for repeated {reason} violations.",
+            )
+        except Exception:
+            logger.exception("Failed to mute user")
+    else:
+        await client.send_message(
+            message.chat.id,
+            f"Warning for {reason}. Warnings: {user['warnings']}",
+        )
+    if Config.LOG_CHANNEL:
+        try:
+            await client.send_message(
+                Config.LOG_CHANNEL,
+                f"User {user_id} violated {reason} in chat {message.chat.id}",
+            )
+        except Exception:
+            logger.exception("Failed to log to channel")
+
+
 def register(app):
-    @app.on_message(filters.text & ~filters.private)
+    @app.on_message(~filters.service)
     @catch_errors
-    async def text_moderation(client, message: Message):
+    async def moderate_messages(client, message: Message):
         if not message.from_user or message.from_user.is_self:
             return
-        text = message.text.lower()
-        if any(word in text for word in BANNED_WORDS):
-            toxicity = 1.0
-        else:
-            toxicity = await check_toxicity(text)
+        if message.from_user.id == Config.OWNER_ID:
+            return
+        if await is_admin(message):
+            return
+        user = await get_or_create_user(app.db, message.from_user.id)
+        if user.get("approved"):
+            return
 
-        if toxicity >= TOXICITY_THRESHOLD:
-            user = await add_warning(app.db, message.from_user.id, toxicity)
-            if user["warnings"] >= WARN_THRESHOLD:
-                await message.chat.restrict(message.from_user.id, ChatPermissions())
-                await message.reply_text("User muted for repeated violations.")
-            else:
-                await message.reply_text(
-                    f"Toxicity {toxicity:.2f}. Please keep the chat civil."
+        text = message.text or message.caption
+        if text:
+            score = await check_toxicity(text)
+            if score >= TOXICITY_THRESHOLD:
+                await process_violation(client, message, message.from_user.id, score, "toxicity")
+                return
+
+        media = None
+        if message.photo:
+            media = message.photo.file_id
+        elif message.video:
+            media = message.video.file_id
+        elif message.animation:
+            media = message.animation.file_id
+        elif message.sticker:
+            media = message.sticker.file_id
+        elif message.document and message.document.mime_type.startswith("image/"):
+            media = message.document.file_id
+
+        if media:
+            file = await client.download_media(media, in_memory=True)
+            result = await check_image(file)
+            nudity = result.get("nudity", {}).get("sexual_activity", 0)
+            drugs = result.get("drug", 0)
+            value = max(nudity, drugs)
+            if value >= NSFW_THRESHOLD:
+                await process_violation(client, message, message.from_user.id, value, "nsfw")
+
+    @app.on_chat_member_updated()
+    async def check_new_member(client, chat_member: ChatMemberUpdated):
+        if chat_member.new_chat_member.status not in {ChatMemberStatus.MEMBER, ChatMemberStatus.RESTRICTED}:
+            return
+        user = await get_or_create_user(app.db, chat_member.from_user.id)
+        if user.get("approved"):
+            return
+        if user["warnings"] >= WARN_THRESHOLD:
+            try:
+                await client.restrict_chat_member(chat_member.chat.id, chat_member.from_user.id, ChatPermissions())
+                await client.send_message(
+                    chat_member.chat.id,
+                    f"{chat_member.from_user.mention} muted due to previous violations.",
                 )
+            except Exception:
+                logger.exception("Failed to restrict user on join")
+
