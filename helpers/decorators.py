@@ -1,5 +1,6 @@
 import functools
 import logging
+from contextlib import suppress
 from pyrogram.types import Message
 from pyrogram.client import Client
 
