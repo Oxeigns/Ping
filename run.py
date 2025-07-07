@@ -29,19 +29,20 @@ def log_versions():
         logger.info("%s version: %s", name, ver)
 
 
-async def main():
-    logger.info("Starting bot")
-    app = Client(
-        "bot",
-        api_id=Config.API_ID,
-        api_hash=Config.API_HASH,
-        bot_token=Config.BOT_TOKEN,
-    )
+app = Client(
+    "bot",
+    api_id=Config.API_ID,
+    api_hash=Config.API_HASH,
+    bot_token=Config.BOT_TOKEN,
+    parse_mode="HTML",
+)
 
+
+async def main():
+    logger.info("Bot started")
     log_versions()
 
     db_path = Config.DATABASE_URL
-    # Ensure parent directory exists when using a filesystem path
     if not db_path.startswith("file:") and db_path != ":memory:":
         os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
     db = await aiosqlite.connect(db_path, uri=db_path.startswith("file:"))
@@ -49,17 +50,13 @@ async def main():
     await init_db(db)
     app.db = db
 
-    await app.start()
-    logger.info("Bot started")
     handlers.register_all(app)
     moderation.register(app)
     logger.debug("Handlers and moderation registered")
-    await idle()
 
-
-async def idle():
     await asyncio.Event().wait()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    logger.info("Starting bot")
+    app.run(main())

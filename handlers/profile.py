@@ -37,4 +37,5 @@ def register(app):
 
     @app.on_callback_query(filters.regex("^close$"))
     async def close_cb(client, callback):
+        await callback.answer()
         await callback.message.delete()
