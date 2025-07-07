@@ -1,6 +1,6 @@
 import asyncio
-import os
 import logging
+import os
 import sys
 import pkg_resources
 from PIL import __version__ as PIL_VERSION
@@ -10,25 +10,29 @@ from pyrogram import Client
 
 import handlers
 import moderation
-from database import init_db
 from config import Config
+from database import init_db
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - [%(levelname)s] - %(name)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("Bot")
 
 def log_versions():
     versions = {
-        "python": sys.version.split()[0],
-        "pyrogram": pkg_resources.get_distribution("pyrogram").version,
+        "Python": sys.version.split()[0],
+        "Pyrogram": pkg_resources.get_distribution("pyrogram").version,
         "aiosqlite": pkg_resources.get_distribution("aiosqlite").version,
         "python-dotenv": pkg_resources.get_distribution("python-dotenv").version,
-        "pillow": PIL_VERSION,
+        "Pillow": PIL_VERSION,
     }
     for name, ver in versions.items():
-        logger.info("%s version: %s", name, ver)
+        logger.info(f"{name} version: {ver}")
 
-
+# Initialize the Pyrogram Client
 app = Client(
     "bot",
     api_id=Config.API_ID,
@@ -37,26 +41,34 @@ app = Client(
     parse_mode="HTML",
 )
 
-
 async def main():
-    logger.info("Bot started")
+    logger.info("🚀 Bot is starting...")
     log_versions()
 
+    # Setup SQLite DB
     db_path = Config.DATABASE_URL
     if not db_path.startswith("file:") and db_path != ":memory:":
         os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
+
     db = await aiosqlite.connect(db_path, uri=db_path.startswith("file:"))
     db.row_factory = aiosqlite.Row
     await init_db(db)
     app.db = db
+    logger.info("✅ Database initialized and connected.")
 
+    # Register handlers and moderation filters
     handlers.register_all(app)
     moderation.register(app)
-    logger.debug("Handlers and moderation registered")
+    logger.info("✅ Handlers and moderation system registered.")
 
-    await asyncio.Event().wait()
-
+    logger.info("🤖 Bot is now running.")
+    await asyncio.Event().wait()  # Keeps bot alive
 
 if __name__ == "__main__":
-    logger.info("Starting bot")
-    app.run(main())
+    try:
+        logger.info("🔧 Launching bot process...")
+        app.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logger.warning("⚠️ Bot shutdown via keyboard or system exit.")
+    except Exception as e:
+        logger.exception("❌ Unhandled exception in bot: %s", e)
