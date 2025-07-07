@@ -3,5 +3,5 @@ services:
     name: telegram-moderation-bot
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --no-cache-dir --only-binary=:all: -r requirements.txt
     startCommand: python -m run
