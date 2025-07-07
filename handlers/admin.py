@@ -3,7 +3,6 @@ from pyrogram.types import Message
 
 from helpers import (
     catch_errors,
-    is_owner,
     get_or_create_user,
     is_admin,
     approve_user,
@@ -72,7 +71,7 @@ def register(app):
             await message.reply_text("Reply to user to remove warnings.")
             return
         user_id = message.reply_to_message.from_user.id
-        user = await get_or_create_user(app.db, user_id)
+        await get_or_create_user(app.db, user_id)
         await app.db.execute("UPDATE users SET warnings=0 WHERE id=?", (user_id,))
         await app.db.commit()
         await message.reply_text("Warnings cleared.")
