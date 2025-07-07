@@ -1,9 +1,7 @@
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
-from helpers import catch_errors, safe_edit, get_or_create_user
-from config import Config
-from pyrogram.errors import MessageNotModified
+from helpers import catch_errors, get_or_create_user
 
 
 def register(app):
