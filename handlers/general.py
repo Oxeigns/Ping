@@ -11,15 +11,13 @@ from helpers import catch_errors, get_or_create_user
 
 def register(app):
     def main_menu():
-        return InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("\ud83d\udcca View My Profile", callback_data="open_profile")],
-                [InlineKeyboardButton("\ud83d\udd27 Configure Group", callback_data="settings")],
-                [InlineKeyboardButton("\ud83d\udce2 Broadcast", callback_data="bc")],
-                [InlineKeyboardButton("\ud83d\udcdc Help", callback_data="help")],
-                [InlineKeyboardButton("\ud83d\udc68\u200d\ud83d\udcbb Developer", url="https://t.me/{0}".format("Oxeign"))],
-            ]
-        )
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton("📊 View My Profile", callback_data="open_profile")],
+            [InlineKeyboardButton("🛠️ Configure Group", callback_data="settings")],
+            [InlineKeyboardButton("📢 Broadcast", callback_data="bc")],
+            [InlineKeyboardButton("📘 Help", callback_data="help")],
+            [InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/Oxeign")],
+        ])
 
     COMMANDS = {
         "start",
@@ -38,7 +36,8 @@ def register(app):
     @catch_errors
     async def start_handler(client, message: Message):
         await message.reply_text(
-            "**Welcome to the Moderation Bot**",
+            "**👋 Welcome to the Advanced Moderation Bot!**\n\n"
+            "Use the control panel below to manage your profile, broadcast, or get help.",
             reply_markup=main_menu(),
             disable_web_page_preview=True,
         )
@@ -46,23 +45,24 @@ def register(app):
     @app.on_message(filters.command("ping") & filters.private)
     @catch_errors
     async def ping_handler(client, message: Message):
-        await message.reply_text("Pong!")
+        await message.reply_text("🏓 Pong!")
 
     @app.on_callback_query(filters.regex("^open_profile$"))
     async def cb_profile(client, callback: CallbackQuery):
         await callback.answer()
         user = await get_or_create_user(app.db, callback.from_user.id)
         text = (
-            f"**{callback.from_user.first_name}**\n"
-            f"ID: `{callback.from_user.id}`\n"
-            f"Toxicity: {user['global_toxicity']:.2f}\n"
-            f"Warnings: {user['warnings']}"
+            f"**👤 {callback.from_user.first_name}**\n"
+            f"🆔 ID: `{callback.from_user.id}`\n"
+            f"💢 Toxicity: `{user['global_toxicity']:.2f}`\n"
+            f"⚠️ Warnings: `{user['warnings']}`\n"
+            f"✅ Approved: {'Yes' if user.get('approved') else 'No'}"
         )
         await callback.message.edit_text(
             text,
-            reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("Close", callback_data="close")]]
-            ),
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_home")],
+            ]),
             disable_web_page_preview=True,
         )
 
@@ -70,20 +70,41 @@ def register(app):
     async def cb_help(client, callback: CallbackQuery):
         await callback.answer()
         await callback.message.edit_text(
-            "Use /help to see available commands.",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Back", callback_data="close")]]),
+            "**📘 Bot Help**\n\n"
+            "`/profile` - View your moderation profile\n"
+            "`/approve` - Approve user\n"
+            "`/unapprove` - Revoke approval\n"
+            "`/broadcast` - Owner broadcast\n"
+            "`/rmwarn` - Reset warnings\n"
+            "`/start`, `/menu`, `/help` - Show control panel",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_home")],
+            ]),
+            disable_web_page_preview=True,
         )
 
     @app.on_callback_query(filters.regex("^settings$"))
     async def cb_settings(client, callback: CallbackQuery):
-        await callback.answer("Settings feature coming soon", show_alert=True)
+        await callback.answer("🛠️ Group settings panel will be available soon!", show_alert=True)
 
     @app.on_callback_query(filters.regex("^bc$"))
     async def cb_broadcast(client, callback: CallbackQuery):
         await callback.answer()
         await callback.message.edit_text(
-            "Only the owner can use /broadcast <text>.",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Back", callback_data="close")]]),
+            "📢 Only the bot owner can use:\n\n`/broadcast <message>`",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_home")],
+            ]),
+            disable_web_page_preview=True,
+        )
+
+    @app.on_callback_query(filters.regex("^back_home$"))
+    async def cb_back_home(client, callback: CallbackQuery):
+        await callback.answer()
+        await callback.message.edit_text(
+            "**👋 Welcome back to the main menu!**",
+            reply_markup=main_menu(),
+            disable_web_page_preview=True,
         )
 
     @app.on_callback_query(filters.regex("^close$"))
@@ -94,6 +115,5 @@ def register(app):
     @app.on_message(filters.regex("^/") & filters.private, group=1)
     async def unknown(client, message: Message):
         command = message.text.split()[0][1:].split("@")[0].lower()
-        if command in COMMANDS:
-            return
-        await message.reply_text("Unknown command. Use /help.")
+        if command not in COMMANDS:
+            await message.reply_text("❌ Unknown command. Use /help to see available options.")
