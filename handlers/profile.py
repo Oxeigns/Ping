@@ -1,14 +1,14 @@
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
-from utils import catch_errors, get_or_create_user
+from helpers import catch_errors, get_or_create_user
 
 
 def build_profile_text(user, tg_user):
     text = [
         f"**{tg_user.first_name}**",
         f"ID: `{tg_user.id}`",
-        f"Toxicity: {user['global_toxicity_score']:.2f}",
+        f"Toxicity: {user['global_toxicity']:.2f}",
         f"Warnings: {user['warnings']}",
         f"Approved: {'Yes' if user.get('approved') else 'No'}",
     ]

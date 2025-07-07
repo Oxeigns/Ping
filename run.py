@@ -1,17 +1,15 @@
 import asyncio
 import logging
 
-from motor.motor_asyncio import AsyncIOMotorClient
+import aiosqlite
 from pyrogram import Client
 
 import handlers
 import moderation
+from database import init_db
 from config import Config
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +21,9 @@ async def main():
         bot_token=Config.BOT_TOKEN,
     )
 
-    db = AsyncIOMotorClient(Config.MONGO_URI).bot
+    db = await aiosqlite.connect(Config.DATABASE_URL)
+    db.row_factory = aiosqlite.Row
+    await init_db(db)
     app.db = db
 
     await app.start()

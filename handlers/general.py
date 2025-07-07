@@ -1,7 +1,7 @@
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
-from utils import catch_errors, safe_edit, get_or_create_user
+from helpers import catch_errors, safe_edit, get_or_create_user
 from config import Config
 from pyrogram.errors import MessageNotModified
 
@@ -38,7 +38,7 @@ def register(app):
         text = (
             f"**{callback.from_user.first_name}**\n"
             f"ID: `{callback.from_user.id}`\n"
-            f"Toxicity: {user['global_toxicity_score']:.2f}\n"
+            f"Toxicity: {user['global_toxicity']:.2f}\n"
             f"Warnings: {user['warnings']}"
         )
         await callback.message.edit_text(
