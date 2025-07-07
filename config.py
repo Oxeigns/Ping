@@ -5,3 +5,4 @@ class Config:
     MONGO_URI = "mongodb://localhost:27017"
     LOG_CHANNEL = -1001234567890
     OWNER_ID = 123456789
+    PERSPECTIVE_API_KEY = "your_perspective_key"
