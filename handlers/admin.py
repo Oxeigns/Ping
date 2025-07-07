@@ -13,5 +13,13 @@ def register(app):
             await message.reply_text("Usage: /broadcast <text>")
             return
         text = message.text.split(None, 1)[1]
-        await message.reply_text(f"Broadcasting: {text}")
-        # Placeholder for broadcast logic
+        await message.reply_text("Broadcasting...")
+        sent = 0
+        async for dialog in app.get_dialogs():
+            if dialog.chat.type in ("group", "supergroup"):
+                try:
+                    await app.send_message(dialog.chat.id, text)
+                    sent += 1
+                except Exception:
+                    continue
+        await message.reply_text(f"Broadcast sent to {sent} chats.")
