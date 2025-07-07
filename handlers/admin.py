@@ -1,5 +1,8 @@
+import logging
 from pyrogram import filters
 from pyrogram.types import Message
+
+logger = logging.getLogger(__name__)
 
 from helpers import (
     catch_errors,
@@ -14,6 +17,7 @@ def register(app):
     @app.on_message(filters.command("broadcast") & filters.user(Config.OWNER_ID))
     @catch_errors
     async def broadcast_handler(client, message: Message):
+        logger.info("/broadcast by %s", message.from_user.id)
         if len(message.command) < 2:
             await message.reply_text("⚠️ Usage:\n`/broadcast <message>`", quote=True)
             return
@@ -42,6 +46,7 @@ def register(app):
         user_id = message.reply_to_message.from_user.id
         await approve_user(app.db, user_id, True)
         await message.reply_text(f"✅ Approved [user](tg://user?id={user_id}).", disable_web_page_preview=True)
+        logger.info("Approved user %s via %s", user_id, message.from_user.id)
 
     @app.on_message(filters.command("unapprove"))
     @catch_errors
@@ -55,6 +60,7 @@ def register(app):
         user_id = message.reply_to_message.from_user.id
         await approve_user(app.db, user_id, False)
         await message.reply_text(f"❌ Unapproved [user](tg://user?id={user_id}).", disable_web_page_preview=True)
+        logger.info("Unapproved user %s via %s", user_id, message.from_user.id)
 
     @app.on_message(filters.command("approved"))
     @catch_errors
@@ -71,6 +77,7 @@ def register(app):
 
         lines = [f"- [user](tg://user?id={row[0]})" for row in rows]
         await message.reply_text("✅ **Approved Users:**\n" + "\n".join(lines), disable_web_page_preview=True)
+        logger.info("Listed approved users for %s", message.from_user.id)
 
     @app.on_message(filters.command("rmwarn"))
     @catch_errors
@@ -86,3 +93,4 @@ def register(app):
         await app.db.execute("UPDATE users SET warnings=0 WHERE id=?", (user_id,))
         await app.db.commit()
         await message.reply_text(f"✅ Cleared all warnings for [user](tg://user?id={user_id}).", disable_web_page_preview=True)
+        logger.info("Cleared warnings for %s via %s", user_id, message.from_user.id)
