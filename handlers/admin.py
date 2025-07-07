@@ -1,7 +1,13 @@
 from pyrogram import filters
 from pyrogram.types import Message
 
-from utils import catch_errors, is_owner, get_or_create_user, is_admin
+from helpers import (
+    catch_errors,
+    is_owner,
+    get_or_create_user,
+    is_admin,
+    approve_user,
+)
 from config import Config
 
 
@@ -32,9 +38,7 @@ def register(app):
             await message.reply_text("Reply to a user to approve.")
             return
         user_id = message.reply_to_message.from_user.id
-        user = await get_or_create_user(app.db, user_id)
-        user["approved"] = True
-        await app.db.users.replace_one({"_id": user_id}, user, upsert=True)
+        await approve_user(app.db, user_id, True)
         await message.reply_text("User approved.")
 
     @app.on_message(filters.command("unapprove"))
@@ -46,9 +50,7 @@ def register(app):
             await message.reply_text("Reply to a user to unapprove.")
             return
         user_id = message.reply_to_message.from_user.id
-        user = await get_or_create_user(app.db, user_id)
-        user["approved"] = False
-        await app.db.users.replace_one({"_id": user_id}, user, upsert=True)
+        await approve_user(app.db, user_id, False)
         await message.reply_text("User unapproved.")
 
     @app.on_message(filters.command("approved"))
@@ -56,10 +58,9 @@ def register(app):
     async def approved_list(client, message: Message):
         if not await is_admin(message):
             return
-        users = app.db.users.find({"approved": True})
-        names = []
-        async for u in users:
-            names.append(str(u["_id"]))
+        async with app.db.execute("SELECT id FROM users WHERE approved=1") as cur:
+            rows = await cur.fetchall()
+        names = [str(r[0]) for r in rows]
         await message.reply_text("Approved users:\n" + "\n".join(names))
 
     @app.on_message(filters.command("rmwarn"))
@@ -72,6 +73,6 @@ def register(app):
             return
         user_id = message.reply_to_message.from_user.id
         user = await get_or_create_user(app.db, user_id)
-        user["warnings"] = 0
-        await app.db.users.replace_one({"_id": user_id}, user, upsert=True)
+        await app.db.execute("UPDATE users SET warnings=0 WHERE id=?", (user_id,))
+        await app.db.commit()
         await message.reply_text("Warnings cleared.")

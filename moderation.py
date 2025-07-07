@@ -5,12 +5,14 @@ from pyrogram.enums import ChatMemberStatus
 from pyrogram.types import ChatMemberUpdated, ChatPermissions, Message
 
 from config import Config
-from utils import (
+from helpers import (
     add_warning,
+    add_log,
     catch_errors,
     check_image,
     check_toxicity,
     get_or_create_user,
+    is_admin,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,6 +28,7 @@ async def process_violation(client, message: Message, user_id: int, score: float
     except Exception:
         pass
     user = await add_warning(client.db, user_id, score)
+    await add_log(client.db, user_id, message.chat.id, reason, score)
     if user["warnings"] >= WARN_THRESHOLD:
         try:
             await message.chat.restrict(user_id, ChatPermissions())
@@ -41,51 +44,50 @@ async def process_violation(client, message: Message, user_id: int, score: float
             f"Warning for {reason}. Warnings: {user['warnings']}",
         )
     if Config.LOG_CHANNEL:
-        await client.send_message(
-            Config.LOG_CHANNEL,
-            f"User {user_id} violated {reason} in chat {message.chat.id}",
-        )
+        try:
+            await client.send_message(
+                Config.LOG_CHANNEL,
+                f"User {user_id} violated {reason} in chat {message.chat.id}",
+            )
+        except Exception:
+            logger.exception("Failed to log to channel")
 
 
 def register(app):
-    @app.on_message(
-        (
-            filters.text
-            | filters.photo
-            | filters.sticker
-            | filters.animation
-            | filters.video
-            | filters.document
-        )
-        & ~filters.service
-    )
+    @app.on_message(~filters.service)
     @catch_errors
     async def moderate_messages(client, message: Message):
         if not message.from_user or message.from_user.is_self:
+            return
+        if message.from_user.id == Config.OWNER_ID:
+            return
+        if await is_admin(message):
             return
         user = await get_or_create_user(app.db, message.from_user.id)
         if user.get("approved"):
             return
 
-        if message.text:
-            score = await check_toxicity(message.text)
+        text = message.text or message.caption
+        if text:
+            score = await check_toxicity(text)
             if score >= TOXICITY_THRESHOLD:
                 await process_violation(client, message, message.from_user.id, score, "toxicity")
                 return
 
-        if message.photo or (
-            message.document
-            and message.document.mime_type
-            and message.document.mime_type.startswith("image/")
-        ) or (
-            message.sticker and not (message.sticker.is_animated or message.sticker.is_video)
-        ):
-            target = (
-                message.photo
-                or message.document
-                or message.sticker
-            )
-            file = await client.download_media(target.file_id, in_memory=True)
+        media = None
+        if message.photo:
+            media = message.photo.file_id
+        elif message.video:
+            media = message.video.file_id
+        elif message.animation:
+            media = message.animation.file_id
+        elif message.sticker:
+            media = message.sticker.file_id
+        elif message.document and message.document.mime_type.startswith("image/"):
+            media = message.document.file_id
+
+        if media:
+            file = await client.download_media(media, in_memory=True)
             result = await check_image(file)
             nudity = result.get("nudity", {}).get("sexual_activity", 0)
             drugs = result.get("drug", 0)

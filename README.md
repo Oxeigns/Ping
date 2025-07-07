@@ -1,6 +1,6 @@
 # Telegram Moderation Bot
 
-A modular Telegram bot built with **Pyrogram** for automated AI‑powered moderation.
+A modular Telegram bot built with **Pyrogram** for automated AI-powered moderation.
 
 ## Features
 - Automatic text and image filtering using Google Perspective and Sightengine APIs
@@ -18,9 +18,9 @@ A modular Telegram bot built with **Pyrogram** for automated AI‑powered modera
 - `/broadcast <text>` – owner broadcast
 
 ## Setup
-1. Copy `.env.example` to `.env` and fill in **API_ID**, **API_HASH**, **BOT_TOKEN**, **OWNER_ID**, **DATABASE_URL** and API keys.
+1. Copy `.env.example` to `.env` and fill the values.
 2. Install requirements with `pip install -r requirements.txt`.
-3. Run the bot with `python -m run`.
+3. Run with `python -m run`.
 
 ### VPS (systemd)
 Place `pingbot.service` in `/etc/systemd/system/`, adjust paths, then:
@@ -33,22 +33,18 @@ sudo systemctl start pingbot
 ### Render.com
 Create a new Web Service and point it to this repository. Render will use `render.yaml` for configuration.
 
-### Heroku or Other Platforms
-A simple `Procfile` is provided for platforms that require it:
-
-```
-worker: python -m run
-```
-
-### API Usage
-The bot requires two external APIs:
-
-1. **Perspective API** – provides the `TOXICITY_API_KEY` used for text moderation.
-2. **Sightengine** – used for image moderation via `SIGHTENGINE_USER` and `SIGHTENGINE_SECRET`.
-
-Sign up for each service, obtain the credentials and place them in the `.env` file.
-
 ## API Keys
 - [Perspective API](https://www.perspectiveapi.com/) for toxicity detection
 - [Sightengine](https://sightengine.com/) for image moderation
 
+
+### Environment Variables
+Edit `.env` with the following keys:
+
+- `BOT_TOKEN` – Telegram bot token
+- `API_ID` / `API_HASH` – Telegram API credentials
+- `OWNER_ID` – your Telegram user ID
+- `LOG_CHANNEL_ID` – channel/group ID for logs
+- `PERSPECTIVE_API_KEY` – Google Perspective API key
+- `IMAGE_MOD_API_KEY` – Sightengine credentials `user:secret`
+- `DATABASE_URL` – path to SQLite DB (or Postgres URI)
