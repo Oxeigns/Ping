@@ -48,4 +48,4 @@ Edit `.env` with the following keys:
 - `LOG_CHANNEL_ID` – channel/group ID for logs
 - `PERSPECTIVE_API_KEY` – Google Perspective API key
 - `IMAGE_MOD_API_KEY` – Sightengine credentials `user:secret`
-- `DATABASE_URL` – path to SQLite DB (or Postgres URI)
+- `DB_FILE` – path to the SQLite DB file. By default the value of `DATABASE_URL` is used unless it looks like a Postgres connection string. This avoids issues with hosts like Render that automatically define `DATABASE_URL` for Postgres.
