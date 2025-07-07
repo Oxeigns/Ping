@@ -91,8 +91,9 @@ def register(app):
         await callback.answer()
         await callback.message.delete()
 
-    @app.on_message(filters.command() & filters.private, group=1)
+    @app.on_message(filters.regex("^/") & filters.private, group=1)
     async def unknown(client, message: Message):
-        if message.command[0].lower() in COMMANDS:
+        command = message.text.split()[0][1:].split("@")[0].lower()
+        if command in COMMANDS:
             return
         await message.reply_text("Unknown command. Use /help.")
