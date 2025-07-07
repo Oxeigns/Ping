@@ -16,6 +16,7 @@ async def check_toxicity(text: str) -> float:
         "requestedAttributes": {"TOXICITY": {}},
     }
 
+    logger.debug("Checking toxicity for text: %s", text)
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload, params=params, timeout=10) as resp:
@@ -26,6 +27,7 @@ async def check_toxicity(text: str) -> float:
                     .get("summaryScore", {})
                     .get("value", 0.0)
                 )
+                logger.debug("Toxicity score: %s", score)
                 return float(score)
     except Exception as exc:
         logger.error("Perspective API error: %s", exc)
@@ -40,12 +42,15 @@ async def check_image(file: bytes) -> dict:
         "api_user": Config.SIGHTENGINE_USER,
         "api_secret": Config.SIGHTENGINE_SECRET,
     }
+    logger.debug("Checking image for NSFW content")
     data = aiohttp.FormData()
     data.add_field("media", file, filename="image.jpg", content_type="image/jpeg")
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, data=data, params=params, timeout=10) as resp:
-                return await resp.json()
+                result = await resp.json()
+                logger.debug("Sightengine result: %s", result)
+                return result
     except Exception as exc:
         logger.error("Sightengine API error: %s", exc)
         return {}
