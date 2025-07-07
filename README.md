@@ -32,6 +32,7 @@ sudo systemctl start pingbot
 
 ### Render.com
 Create a new Web Service and point it to this repository. Render will use `render.yaml` for configuration.
+Render defaults to the latest Python version which may be incompatible with pinned dependencies. This project targets **Python 3.11**, so the repository includes a `runtime.txt` file to explicitly set the Python version during deployment.
 
 ## API Keys
 - [Perspective API](https://www.perspectiveapi.com/) for toxicity detection
