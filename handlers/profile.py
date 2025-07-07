@@ -21,14 +21,15 @@ def register(app):
     @catch_errors
     async def profile_handler(client, message: Message):
         target = message.reply_to_message.from_user if message.reply_to_message else message.from_user
-        user = await get_or_create_user(app.db, target.id)
-        text = build_profile_text(user, target)
+        tg_user = await client.get_users(target.id)
+        user = await get_or_create_user(app.db, tg_user.id)
+        text = build_profile_text(user, tg_user)
         keyboard = InlineKeyboardMarkup(
             [[InlineKeyboardButton("❌ Close", callback_data="close")]]
         )
         try:
-            if target.photo:
-                photo = await client.download_media(target.photo.big_file_id, in_memory=True)
+            if tg_user.photo:
+                photo = await client.download_media(tg_user.photo.big_file_id, in_memory=True)
                 await message.reply_photo(photo, caption=text, reply_markup=keyboard)
                 return
         except Exception:

@@ -36,9 +36,10 @@ async def get_or_create_user(db: aiosqlite.Connection, user_id: int) -> Dict[str
     """
     async with db.execute("SELECT * FROM users WHERE id = ?", (user_id,)) as cur:
         row = await cur.fetchone()
+        columns = [c[0] for c in cur.description]
 
     if row:
-        return dict(zip([column[0] for column in cur.description], row))
+        return dict(zip(columns, row))
 
     await db.execute("""
         INSERT INTO users (id, global_toxicity, warnings, approved, mutes, last_violation)

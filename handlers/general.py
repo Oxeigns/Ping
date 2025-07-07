@@ -4,6 +4,7 @@ from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
     CallbackQuery,
+    InputMediaPhoto,
 )
 
 from helpers import catch_errors, get_or_create_user
@@ -32,7 +33,7 @@ def register(app):
         "broadcast",
     }
 
-    @app.on_message(filters.command(["start", "menu", "help"]) & filters.private)
+    @app.on_message(filters.command(["start", "menu", "help"]))
     @catch_errors
     async def start_handler(client, message: Message):
         await message.reply_text(
@@ -42,7 +43,7 @@ def register(app):
             disable_web_page_preview=True,
         )
 
-    @app.on_message(filters.command("ping") & filters.private)
+    @app.on_message(filters.command("ping"))
     @catch_errors
     async def ping_handler(client, message: Message):
         await message.reply_text("🏓 Pong!")
@@ -50,14 +51,28 @@ def register(app):
     @app.on_callback_query(filters.regex("^open_profile$"))
     async def cb_profile(client, callback: CallbackQuery):
         await callback.answer()
-        user = await get_or_create_user(app.db, callback.from_user.id)
+        tg_user = await client.get_users(callback.from_user.id)
+        user = await get_or_create_user(app.db, tg_user.id)
         text = (
-            f"**👤 {callback.from_user.first_name}**\n"
-            f"🆔 ID: `{callback.from_user.id}`\n"
+            f"**👤 {tg_user.first_name}**\n"
+            f"🆔 ID: `{tg_user.id}`\n"
             f"💢 Toxicity: `{user['global_toxicity']:.2f}`\n"
             f"⚠️ Warnings: `{user['warnings']}`\n"
             f"✅ Approved: {'Yes' if user.get('approved') else 'No'}"
         )
+        photo_id = tg_user.photo.big_file_id if tg_user.photo else None
+        if photo_id:
+            try:
+                await callback.message.edit_media(
+                    InputMediaPhoto(photo_id, caption=text),
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_home")],
+                    ]),
+                )
+                return
+            except Exception:
+                pass
+
         await callback.message.edit_text(
             text,
             reply_markup=InlineKeyboardMarkup([
