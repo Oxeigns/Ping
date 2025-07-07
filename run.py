@@ -12,7 +12,7 @@ import moderation
 from database import init_db
 from config import Config
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -29,6 +29,7 @@ def log_versions():
 
 
 async def main():
+    logger.info("Starting bot")
     app = Client(
         "bot",
         api_id=Config.API_ID,
@@ -47,6 +48,7 @@ async def main():
     logger.info("Bot started")
     handlers.register_all(app)
     moderation.register(app)
+    logger.debug("Handlers and moderation registered")
     await idle()
 
 

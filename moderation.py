@@ -23,6 +23,7 @@ WARN_THRESHOLD = 3
 
 
 async def process_violation(client, message: Message, user_id: int, score: float, reason: str):
+    logger.info("Violation detected: %s score %.2f for user %d", reason, score, user_id)
     try:
         await message.delete()
     except Exception:
@@ -111,4 +112,6 @@ def register(app):
                 )
             except Exception:
                 logger.exception("Failed to restrict user on join")
+
+    logger.info("Moderation handlers registered")
 
