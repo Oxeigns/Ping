@@ -51,3 +51,15 @@ Edit `.env` with the following keys:
 - `IMAGE_MOD_API_KEY` – Sightengine credentials `user:secret`
 - `DB_FILE` – path to the SQLite DB file. By default the value of `DATABASE_URL` is used unless it looks like a Postgres connection string. This avoids issues with hosts like Render that automatically define `DATABASE_URL` for Postgres.
 - `DEBUG_UPDATES` – set to `1` to enable verbose logging of every incoming update. Useful when troubleshooting why the bot is not receiving commands.
+
+## Troubleshooting MTProto connectivity on Render
+
+Some hosts may block or throttle Telegram's MTProto ports. To verify long polling works on your Render worker, run the following minimal script:
+
+```bash
+python mtproto_test.py
+```
+
+If the bot sends a startup message and responds to commands, MTProto is allowed. Otherwise, consider switching to HTTP-based polling using `python-telegram-bot` or `aiogram`.
+
+A basic HTTP polling example using `python-telegram-bot` is available in `http_polling_example.py`.
