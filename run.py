@@ -6,7 +6,7 @@ import pkg_resources
 from PIL import __version__ as PIL_VERSION
 
 import aiosqlite
-from pyrogram import Client
+from pyrogram import Client, idle
 
 import handlers
 import moderation
@@ -61,13 +61,16 @@ async def main():
     moderation.register(app)
     logger.info("✅ Handlers and moderation system registered.")
 
-    logger.info("🤖 Bot is now running.")
-    await asyncio.Event().wait()  # Keeps bot alive
+    async with app:
+        logger.info("🤖 Bot is now running.")
+        await idle()
+
+    await db.close()
 
 if __name__ == "__main__":
     try:
         logger.info("🔧 Launching bot process...")
-        app.run(main())
+        asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logger.warning("⚠️ Bot shutdown via keyboard or system exit.")
     except Exception as e:
