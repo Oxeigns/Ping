@@ -60,6 +60,14 @@ async def main():
     moderation.register(app)
     logger.info("✅ Handlers and moderation system registered.")
 
+    if os.getenv("DEBUG_UPDATES"):
+        try:
+            from handlers import debug as debug_handlers
+            debug_handlers.register(app)
+            logger.info("🐞 Debug handlers enabled.")
+        except Exception as e:
+            logger.exception("Failed to register debug handlers: %s", e)
+
     async with app:
         logger.info("🤖 Bot started. Waiting for updates...")
         await idle()
