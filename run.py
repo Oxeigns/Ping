@@ -5,7 +5,7 @@ import pkg_resources
 from PIL import __version__ as PIL_VERSION
 
 import aiosqlite
-from pyrogram import Client
+from pyrogram import Client, idle
 
 import handlers
 import moderation
@@ -62,7 +62,7 @@ async def main():
 
     async with app:
         logger.info("🤖 Bot started. Waiting for updates...")
-        await app.idle()
+        await idle()
 
     await db.close()
     logger.info("📴 Database connection closed.")
