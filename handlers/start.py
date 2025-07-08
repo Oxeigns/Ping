@@ -191,3 +191,5 @@ def register(app):
                 "❌ Unknown command. Use /help to see available options."
             )
 
+    logger.info("✅ Start handlers registered.")
+
