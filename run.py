@@ -6,6 +6,7 @@ from PIL import __version__ as PIL_VERSION
 
 import aiosqlite
 from pyrogram import Client, idle
+import asyncio
 
 import handlers
 import moderation
@@ -68,12 +69,17 @@ async def main():
         except Exception as e:
             logger.exception("Failed to register debug handlers: %s", e)
 
-    async with app:
-        logger.info("🤖 Bot started. Waiting for updates...")
+    await app.start()
+    logger.info("🤖 Bot started. Waiting for updates...")
+    try:
         await idle()
-
-    await db.close()
-    logger.info("📴 Database connection closed.")
+    except asyncio.CancelledError:
+        logger.info("Stop signal received (SIGINT). Exiting...")
+        raise
+    finally:
+        await app.stop()
+        await db.close()
+        logger.info("📴 Database connection closed.")
 
 if __name__ == "__main__":
     try:
