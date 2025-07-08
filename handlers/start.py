@@ -14,14 +14,18 @@ logger = logging.getLogger(__name__)
 
 
 def register(app):
-    def main_menu():
-        return InlineKeyboardMarkup([
-            [InlineKeyboardButton("📊 View My Profile", callback_data="open_profile")],
-            [InlineKeyboardButton("🛠️ Configure Group", callback_data="settings")],
-            [InlineKeyboardButton("📢 Broadcast", callback_data="bc")],
-            [InlineKeyboardButton("📘 Help", callback_data="help")],
-            [InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/Oxeign")],
-        ])
+    """Register basic command and callback handlers."""
+
+    def main_menu() -> InlineKeyboardMarkup:
+        return InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("📊 View My Profile", callback_data="open_profile")],
+                [InlineKeyboardButton("🛠️ Configure Group", callback_data="settings")],
+                [InlineKeyboardButton("📢 Broadcast", callback_data="bc")],
+                [InlineKeyboardButton("📘 Help", callback_data="help")],
+                [InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/Oxeign")],
+            ]
+        )
 
     COMMANDS = {
         "start",
@@ -39,7 +43,12 @@ def register(app):
     @app.on_message(filters.command(["start", "menu", "help"]))
     @catch_errors
     async def start_handler(client, message: Message):
-        logger.info("%s triggered start/menu/help", message.from_user.id)
+        logger.info(
+            "Command %s from %s in %s",
+            message.command[0].lower(),
+            message.from_user.id,
+            message.chat.id,
+        )
         await message.reply_text(
             "**👋 Welcome to the Advanced Moderation Bot!**\n\n"
             "Use the control panel below to manage your profile, broadcast, or get help.",
@@ -50,13 +59,13 @@ def register(app):
     @app.on_message(filters.command("ping"))
     @catch_errors
     async def ping_handler(client, message: Message):
-        logger.info("/ping by %s", message.from_user.id)
+        logger.info("/ping by %s in %s", message.from_user.id, message.chat.id)
         await message.reply_text("🏓 Pong!")
 
     @app.on_message(filters.command("profile"))
     @catch_errors
     async def profile_handler(client, message: Message):
-        logger.info("/profile by %s", message.from_user.id)
+        logger.info("/profile by %s in %s", message.from_user.id, message.chat.id)
         target = message.reply_to_message.from_user if message.reply_to_message else message.from_user
         tg_user = await client.get_users(target.id)
         user = await get_or_create_user(app.db, tg_user.id)
@@ -81,7 +90,11 @@ def register(app):
     @app.on_callback_query(filters.regex("^open_profile$"))
     async def cb_profile(client, callback: CallbackQuery):
         await callback.answer()
-        logger.info("profile callback from %s", callback.from_user.id)
+        logger.info(
+            "profile callback from %s in %s",
+            callback.from_user.id,
+            callback.message.chat.id,
+        )
         tg_user = await client.get_users(callback.from_user.id)
         user = await get_or_create_user(app.db, tg_user.id)
         text = (
@@ -115,7 +128,9 @@ def register(app):
     @app.on_callback_query(filters.regex("^help$"))
     async def cb_help(client, callback: CallbackQuery):
         await callback.answer()
-        logger.info("help callback from %s", callback.from_user.id)
+        logger.info(
+            "help callback from %s in %s", callback.from_user.id, callback.message.chat.id
+        )
         await callback.message.edit_text(
             "**📘 Bot Help**\n\n"
             "`/profile` - View your moderation profile\n"
@@ -133,11 +148,14 @@ def register(app):
     @app.on_callback_query(filters.regex("^settings$"))
     async def cb_settings(client, callback: CallbackQuery):
         await callback.answer("🛠️ Group settings panel will be available soon!", show_alert=True)
+        logger.info("settings callback from %s in %s", callback.from_user.id, callback.message.chat.id)
 
     @app.on_callback_query(filters.regex("^bc$"))
     async def cb_broadcast(client, callback: CallbackQuery):
         await callback.answer()
-        logger.info("broadcast info callback from %s", callback.from_user.id)
+        logger.info(
+            "broadcast info callback from %s in %s", callback.from_user.id, callback.message.chat.id
+        )
         await callback.message.edit_text(
             "📢 Only the bot owner can use:\n\n`/broadcast <message>`",
             reply_markup=InlineKeyboardMarkup([
@@ -149,7 +167,9 @@ def register(app):
     @app.on_callback_query(filters.regex("^back_home$"))
     async def cb_back_home(client, callback: CallbackQuery):
         await callback.answer()
-        logger.info("back to menu callback from %s", callback.from_user.id)
+        logger.info(
+            "back to menu callback from %s in %s", callback.from_user.id, callback.message.chat.id
+        )
         await callback.message.edit_text(
             "**👋 Welcome back to the main menu!**",
             reply_markup=main_menu(),
@@ -159,12 +179,15 @@ def register(app):
     @app.on_callback_query(filters.regex("^close$"))
     async def close_cb(client, callback: CallbackQuery):
         await callback.answer()
-        logger.info("close callback from %s", callback.from_user.id)
+        logger.info("close callback from %s in %s", callback.from_user.id, callback.message.chat.id)
         await callback.message.delete()
 
     @app.on_message(filters.regex("^/") & filters.private, group=1)
     async def unknown(client, message: Message):
         command = message.text.split()[0][1:].split("@")[0].lower()
         if command not in COMMANDS:
-            await message.reply_text("❌ Unknown command. Use /help to see available options.")
+            logger.info("Unknown command %s from %s", command, message.from_user.id)
+            await message.reply_text(
+                "❌ Unknown command. Use /help to see available options."
+            )
 
