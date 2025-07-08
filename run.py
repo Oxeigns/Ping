@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 import sys
@@ -61,16 +60,14 @@ async def main():
     moderation.register(app)
     logger.info("✅ Handlers and moderation system registered.")
 
-    async with app:
-        logger.info("🤖 Bot is now running.")
-        await idle()
+    await idle()
 
     await db.close()
 
 if __name__ == "__main__":
     try:
         logger.info("🔧 Launching bot process...")
-        asyncio.run(main())
+        app.run(main())
     except (KeyboardInterrupt, SystemExit):
         logger.warning("⚠️ Bot shutdown via keyboard or system exit.")
     except Exception as e:

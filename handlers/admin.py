@@ -94,3 +94,5 @@ def register(app):
         await app.db.commit()
         await message.reply_text(f"✅ Cleared all warnings for [user](tg://user?id={user_id}).", disable_web_page_preview=True)
         logger.info("Cleared warnings for %s via %s", user_id, message.from_user.id)
+
+    logger.info("✅ Admin handlers registered.")
