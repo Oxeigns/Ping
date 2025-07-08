@@ -17,6 +17,7 @@ def register(app):
     @app.on_message(filters.command("broadcast") & filters.user(Config.OWNER_ID))
     @catch_errors
     async def broadcast_handler(client, message: Message):
+        print("Received /broadcast command")
         logger.info("/broadcast by %s", message.from_user.id)
         if len(message.command) < 2:
             await message.reply_text("⚠️ Usage:\n`/broadcast <message>`", quote=True)
@@ -37,6 +38,7 @@ def register(app):
     @app.on_message(filters.command("approve"))
     @catch_errors
     async def approve_handler(client, message: Message):
+        print("Received /approve command")
         if not await is_admin(message):
             return
         if not message.reply_to_message:
@@ -51,6 +53,7 @@ def register(app):
     @app.on_message(filters.command("unapprove"))
     @catch_errors
     async def unapprove_handler(client, message: Message):
+        print("Received /unapprove command")
         if not await is_admin(message):
             return
         if not message.reply_to_message:
@@ -65,6 +68,7 @@ def register(app):
     @app.on_message(filters.command("approved"))
     @catch_errors
     async def approved_list(client, message: Message):
+        print("Received /approved command")
         if not await is_admin(message):
             return
 
@@ -82,6 +86,7 @@ def register(app):
     @app.on_message(filters.command("rmwarn"))
     @catch_errors
     async def rmwarn_handler(client, message: Message):
+        print("Received /rmwarn command")
         if not await is_admin(message):
             return
         if not message.reply_to_message:

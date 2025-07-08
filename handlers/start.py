@@ -43,6 +43,7 @@ def register(app):
     @app.on_message(filters.command(["start", "menu", "help"]))
     @catch_errors
     async def start_handler(client, message: Message):
+        print("Received /start or menu/help command")
         logger.info(
             "Command %s from %s in %s",
             message.command[0].lower(),
@@ -59,12 +60,14 @@ def register(app):
     @app.on_message(filters.command("ping"))
     @catch_errors
     async def ping_handler(client, message: Message):
+        print("Received /ping command")
         logger.info("/ping by %s in %s", message.from_user.id, message.chat.id)
         await message.reply_text("🏓 Pong!")
 
     @app.on_message(filters.command("profile"))
     @catch_errors
     async def profile_handler(client, message: Message):
+        print("Received /profile command")
         logger.info("/profile by %s in %s", message.from_user.id, message.chat.id)
         target = message.reply_to_message.from_user if message.reply_to_message else message.from_user
         tg_user = await client.get_users(target.id)
@@ -186,6 +189,7 @@ def register(app):
     async def unknown(client, message: Message):
         command = message.text.split()[0][1:].split("@")[0].lower()
         if command not in COMMANDS:
+            print(f"Unknown command: {command}")
             logger.info("Unknown command %s from %s", command, message.from_user.id)
             await message.reply_text(
                 "❌ Unknown command. Use /help to see available options."
