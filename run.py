@@ -3,6 +3,7 @@ import os
 import sys
 import pkg_resources
 from PIL import __version__ as PIL_VERSION
+from dotenv import load_dotenv
 
 import aiosqlite
 from pyrogram import Client, idle
@@ -10,6 +11,7 @@ import asyncio
 
 import handlers
 import moderation
+load_dotenv()
 from config import Config
 from database import init_db
 
@@ -20,6 +22,19 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger("Bot")
+
+if not all([Config.BOT_TOKEN, Config.API_ID, Config.API_HASH]):
+    missing = [
+        name
+        for name, value in {
+            "BOT_TOKEN": Config.BOT_TOKEN,
+            "API_ID": Config.API_ID,
+            "API_HASH": Config.API_HASH,
+        }.items()
+        if not value
+    ]
+    logger.error("Missing required environment variables: %s", ", ".join(missing))
+    raise SystemExit(1)
 
 def log_versions():
     versions = {
@@ -69,7 +84,11 @@ async def main():
         except Exception as e:
             logger.exception("Failed to register debug handlers: %s", e)
 
-    await app.start()
+    try:
+        await app.start()
+    except Exception as e:
+        logger.exception("Failed to connect to Telegram: %s", e)
+        raise
     logger.info("🤖 Bot started. Waiting for updates...")
     try:
         await idle()
@@ -82,11 +101,4 @@ async def main():
         logger.info("📴 Database connection closed.")
 
 if __name__ == "__main__":
-    try:
-        logger.info("🔧 Launching bot process...")
-        import asyncio
-        asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
-        logger.warning("⚠️ Bot shutdown via keyboard or system exit.")
-    except Exception as e:
-        logger.exception("❌ Unhandled exception in bot: %s", e)
+    asyncio.run(main())
