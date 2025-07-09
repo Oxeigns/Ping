@@ -10,7 +10,7 @@ from pyrogram import Client, idle
 import asyncio
 
 import handlers
-import moderation
+# moderation  # Temporarily disabled for testing
 load_dotenv()
 from config import Config
 from database import init_db
@@ -60,6 +60,9 @@ async def main():
     logger.info("🚀 Bot is starting...")
     log_versions()
 
+    logger.info("🔐 Using BOT_TOKEN: %s...", Config.BOT_TOKEN[:10])
+    logger.info("🛰️ Connecting to Telegram...")
+
     # Setup SQLite DB
     db_path = Config.DATABASE_URL
     if not db_path.startswith("file:") and db_path != ":memory:":
@@ -71,10 +74,13 @@ async def main():
     app.db = db
     logger.info("✅ Database initialized and connected.")
 
-    # Register handlers and moderation filters
+    # Register handlers
     handlers.register_all(app)
-    moderation.register(app)
-    logger.info("✅ Handlers and moderation system registered.")
+    logger.info("✅ Handlers registered.")
+
+    # Optional: Register moderation
+    # moderation.register(app)
+    # logger.info("✅ Moderation registered.")
 
     if os.getenv("DEBUG_UPDATES"):
         try:
@@ -86,9 +92,16 @@ async def main():
 
     try:
         await app.start()
+        logger.info("✅ Connected to Telegram successfully.")
     except Exception as e:
-        logger.exception("Failed to connect to Telegram: %s", e)
+        logger.exception("❌ Failed to connect to Telegram: %s", e)
         raise
+
+    # Log all incoming messages (for testing)
+    @app.on_message()
+    async def catch_all(client, message):
+        logger.info("📩 Received message from %s: %s", message.from_user.id, message.text)
+
     logger.info("🤖 Bot started. Waiting for updates...")
     try:
         await idle()
