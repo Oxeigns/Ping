@@ -20,6 +20,10 @@ TOXICITY_THRESHOLD = 0.85
 NSFW_THRESHOLD = 0.85
 WARN_THRESHOLD = 3
 
+SAFE_COMMANDS = [
+    "start", "menu", "help", "ping", "profile",
+    "approve", "unapprove", "broadcast"
+]
 
 async def process_violation(client, message: Message, user_id: int, score: float, reason: str):
     logger.warning("🔴 Violation Detected | Reason: %s | Score: %.2f | User: %d", reason, score, user_id)
@@ -59,9 +63,9 @@ async def process_violation(client, message: Message, user_id: int, score: float
         except Exception:
             logger.warning("Could not send log to LOG_CHANNEL")
 
-
 def register(app):
-    @app.on_message(~filters.service, group=1)
+    # Ignore commands and service messages in moderation
+    @app.on_message(~filters.service & ~filters.command(SAFE_COMMANDS), group=1)
     @catch_errors
     async def moderate_messages(client, message: Message):
         if not message.from_user or message.from_user.is_self:
