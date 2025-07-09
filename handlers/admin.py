@@ -5,7 +5,6 @@ from pyrogram.types import Message
 logger = logging.getLogger(__name__)
 
 from helpers import (
-    catch_errors,
     get_or_create_user,
     is_admin,
     approve_user,
@@ -14,8 +13,8 @@ from config import Config
 
 
 def register(app):
+    """Register administrative command handlers."""
     @app.on_message(filters.command("broadcast") & filters.user(Config.OWNER_ID))
-    @catch_errors
     async def broadcast_handler(client, message: Message):
         print("Received /broadcast command")
         logger.info("/broadcast by %s", message.from_user.id)
@@ -36,7 +35,6 @@ def register(app):
         await message.reply_text(f"✅ Broadcast sent to `{sent}` chats.")
 
     @app.on_message(filters.command("approve"))
-    @catch_errors
     async def approve_handler(client, message: Message):
         print("Received /approve command")
         if not await is_admin(message):
@@ -51,7 +49,6 @@ def register(app):
         logger.info("Approved user %s via %s", user_id, message.from_user.id)
 
     @app.on_message(filters.command("unapprove"))
-    @catch_errors
     async def unapprove_handler(client, message: Message):
         print("Received /unapprove command")
         if not await is_admin(message):
@@ -66,7 +63,6 @@ def register(app):
         logger.info("Unapproved user %s via %s", user_id, message.from_user.id)
 
     @app.on_message(filters.command("approved"))
-    @catch_errors
     async def approved_list(client, message: Message):
         print("Received /approved command")
         if not await is_admin(message):
@@ -84,7 +80,6 @@ def register(app):
         logger.info("Listed approved users for %s", message.from_user.id)
 
     @app.on_message(filters.command("rmwarn"))
-    @catch_errors
     async def rmwarn_handler(client, message: Message):
         print("Received /rmwarn command")
         if not await is_admin(message):
