@@ -8,11 +8,12 @@ from pyrogram.types import (
     InputMediaPhoto,
 )
 
-from helpers import catch_errors, get_or_create_user
+from helpers import get_or_create_user
 
 logger = logging.getLogger(__name__)
 
 def register(app):
+    print("start.register called")
     def main_menu() -> InlineKeyboardMarkup:
         return InlineKeyboardMarkup(
             [
@@ -29,9 +30,9 @@ def register(app):
         "approve", "unapprove", "approved", "rmwarn", "broadcast",
     }
 
-    @app.on_message(filters.command(["start", "menu", "help"]) & (filters.private | filters.group))
-    @catch_errors
+    @app.on_message(filters.command(["start", "menu", "help"]))
     async def start_handler(client, message: Message):
+        print("handler triggered")
         print(f"🟢 Received /{message.command[0]} from {message.from_user.id} in chat {message.chat.id}")
         logger.info("Command %s from %s in %s", message.command[0].lower(), message.from_user.id, message.chat.id)
         await message.reply_text(
@@ -41,15 +42,14 @@ def register(app):
             disable_web_page_preview=True,
         )
 
-    @app.on_message(filters.command("ping") & (filters.private | filters.group))
-    @catch_errors
+    @app.on_message(filters.command("ping"))
     async def ping_handler(client, message: Message):
+        print("handler triggered")
         print(f"🟢 /ping received from {message.from_user.id} in chat {message.chat.id}")
         logger.info("/ping by %s in %s", message.from_user.id, message.chat.id)
         await message.reply_text("🏓 Pong!")
 
-    @app.on_message(filters.command("profile") & (filters.private | filters.group))
-    @catch_errors
+    @app.on_message(filters.command("profile"))
     async def profile_handler(client, message: Message):
         print(f"🟢 /profile received from {message.from_user.id}")
         logger.info("/profile by %s in %s", message.from_user.id, message.chat.id)
@@ -155,7 +155,7 @@ def register(app):
         await callback.message.delete()
 
     # Unknown command fallback
-    @app.on_message(filters.regex("^/") & filters.private, group=999)
+    @app.on_message(filters.regex("^/"), group=999)
     async def unknown(client, message: Message):
         command = message.text.split()[0][1:].split("@")[0].lower()
         if command not in COMMANDS:
