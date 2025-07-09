@@ -7,7 +7,6 @@ from config import Config
 from helpers import (
     add_warning,
     add_log,
-    catch_errors,
     check_image,
     check_toxicity,
     get_or_create_user,
@@ -65,8 +64,7 @@ async def process_violation(client, message: Message, user_id: int, score: float
 
 def register(app):
     # Ignore commands and service messages in moderation
-    @app.on_message(~filters.service & ~filters.command(SAFE_COMMANDS), group=1)
-    @catch_errors
+    @app.on_message(~filters.service & ~filters.command(SAFE_COMMANDS))
     async def moderate_messages(client, message: Message):
         if not message.from_user or message.from_user.is_self:
             return
