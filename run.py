@@ -1,7 +1,9 @@
 import asyncio
+import logging
 import os
 import aiosqlite
-from telegram.ext import ApplicationBuilder
+from telegram.ext import ApplicationBuilder, ContextTypes
+from telegram.error import Conflict
 
 from config import Config
 from database import init_db
@@ -34,6 +36,11 @@ async def post_init(application):
     application.db = await aiosqlite.connect(db_url, uri=uri)
     await init_db(application.db)
 
+    try:
+        await application.bot.delete_webhook(drop_pending_updates=True)
+    except Exception as exc:
+        logging.warning("Failed to delete webhook: %s", exc)
+
 
 def main() -> None:
     application = (
@@ -48,6 +55,14 @@ def main() -> None:
     register_admin(application)
     register_debug(application)
     register_moderation(application)
+
+    async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if isinstance(context.error, Conflict):
+            logging.warning("Telegram API conflict: %s", context.error)
+            return
+        logging.exception("Unhandled exception: %s", context.error)
+
+    application.add_error_handler(error_handler)
 
     application.run_polling()
 
