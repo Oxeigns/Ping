@@ -22,7 +22,8 @@ from helpers import (
 
 logger = logging.getLogger(__name__)
 
-MOD_API_URL = "https://api.deepai.org/api/toxicity-classification"
+# Endpoint for text moderation
+MOD_API_URL = "https://api.safone.dev/moderation"
 
 TOXICITY_THRESHOLD = 0.85
 NSFW_THRESHOLD = 0.85
@@ -34,22 +35,21 @@ SAFE_COMMANDS = [
 ]
 
 
-async def check_text(text: str, bot=None) -> dict | None:
-    """Analyze text using DeepAI's Toxicity Classification API."""
+async def check_text(text: str, bot=None) -> dict:
+    """Analyze text using Safone's moderation API."""
     try:
         resp = await asyncio.to_thread(
             requests.post,
             MOD_API_URL,
-            headers={"api-key": Config.DEEPAI_API_KEY},
-            data={"text": text},
+            json={"text": text},
             timeout=10,
         )
         resp.raise_for_status()
-        data = resp.json().get("output", {})
+        data = resp.json() or {}
         logger.debug("Moderation API response: %s", data)
         return data
     except Exception as exc:
-        logger.warning("Moderation API failure: %s", exc)
+        logger.exception("Moderation API failure: %s", exc)
         if bot and Config.LOG_CHANNEL:
             try:
                 await bot.send_message(
@@ -60,7 +60,7 @@ async def check_text(text: str, bot=None) -> dict | None:
             except Exception:
                 logger.debug("Could not notify log channel about API failure")
 
-        return None
+        return {}
 
 async def process_violation(application: Application, message, user_id: int, score: float, reason: str):
     logger.warning("🔴 Violation Detected | Reason: %s | Score: %.2f | User: %d", reason, score, user_id)
@@ -124,17 +124,16 @@ def register(app: Application):
                 if cmd in SAFE_COMMANDS:
                     return
             result = await check_text(text, context.bot)
-            if result:
-                score = float(result.get("toxicity", 0))
-                if score >= TOXICITY_THRESHOLD:
-                    await process_violation(
-                        context.application,
-                        message,
-                        user_id,
-                        score,
-                        "toxicity",
-                    )
-                    return
+            if any(result.get(flag) for flag in ("is_offensive", "is_toxic", "is_nsfw")):
+                reason = "nsfw" if result.get("is_nsfw") else "toxicity"
+                await process_violation(
+                    context.application,
+                    message,
+                    user_id,
+                    1.0,
+                    reason,
+                )
+                return
 
         media = None
         if message.photo:
@@ -184,7 +183,7 @@ def register(app: Application):
             except Exception:
                 logger.exception("Failed to restrict user on join")
 
-    app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, moderate_messages))
+    app.add_handler(MessageHandler(filters.text & ~filters.private, moderate_messages))
     app.add_handler(ChatMemberHandler(check_new_member, ChatMemberHandler.CHAT_MEMBER))
 
     logger.info("✅ Moderation handlers registered successfully.")
