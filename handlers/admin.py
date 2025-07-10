@@ -1,5 +1,7 @@
 import logging
+import json
 from telegram import Update
+from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -14,6 +16,7 @@ from helpers import (
     is_admin,
     approve_user,
 )
+from moderation import check_text
 from config import Config
 
 
@@ -95,11 +98,27 @@ def register(app: Application):
         await app.db.commit()
         await message.reply_text(f"✅ Cleared all warnings for [user](tg://user?id={user_id}).", disable_web_page_preview=True)
         logger.info("Cleared warnings for %s via %s", user_id, message.from_user.id)
+
+    async def modcheck_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if update.effective_user.id != Config.OWNER_ID:
+            return
+        sample = "You are stupid"
+        result = await check_text(sample, context.bot)
+        if not result:
+            await update.message.reply_text("❌ Moderation API request failed.")
+            return
+        text = json.dumps(result, indent=2)
+        await update.message.reply_text(
+            f"`{text}`",
+            parse_mode=ParseMode.MARKDOWN,
+            disable_web_page_preview=True,
+        )
     app.add_handler(CommandHandler("broadcast", broadcast_handler))
     app.add_handler(CommandHandler("approve", approve_handler))
     app.add_handler(CommandHandler("unapprove", unapprove_handler))
     app.add_handler(CommandHandler("approved", approved_list))
     app.add_handler(CommandHandler("rmwarn", rmwarn_handler))
+    app.add_handler(CommandHandler("modcheck", modcheck_handler))
 
     logger.info("✅ Admin handlers registered.")
 

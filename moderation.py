@@ -1,4 +1,6 @@
 import logging
+import asyncio
+import requests
 from telegram import Update, ChatPermissions
 from telegram.constants import ChatMemberStatus, ParseMode
 from telegram.ext import (
@@ -14,12 +16,13 @@ from helpers import (
     add_warning,
     add_log,
     check_image,
-    check_toxicity,
     get_or_create_user,
     is_admin,
 )
 
 logger = logging.getLogger(__name__)
+
+MOD_API_URL = "https://api.safone.dev/moderation"
 
 TOXICITY_THRESHOLD = 0.85
 NSFW_THRESHOLD = 0.85
@@ -29,6 +32,33 @@ SAFE_COMMANDS = [
     "start", "menu", "help", "ping", "profile",
     "approve", "unapprove", "broadcast"
 ]
+
+
+async def check_text(text: str, bot=None) -> dict | None:
+    """Send text to external moderation API and return parsed JSON."""
+    try:
+        resp = await asyncio.to_thread(
+            requests.post,
+            MOD_API_URL,
+            json={"text": text},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        logger.debug("Moderation API response: %s", data)
+        return data
+    except Exception as exc:
+        logger.warning("Moderation API failure: %s", exc)
+        if bot and Config.LOG_CHANNEL:
+            try:
+                await bot.send_message(
+                    Config.LOG_CHANNEL,
+                    f"Moderation API error: {exc}",
+                    disable_notification=True,
+                )
+            except Exception:
+                logger.debug("Could not notify log channel about API failure")
+        return None
 
 async def process_violation(application: Application, message, user_id: int, score: float, reason: str):
     logger.warning("🔴 Violation Detected | Reason: %s | Score: %.2f | User: %d", reason, score, user_id)
@@ -87,10 +117,20 @@ def register(app: Application):
 
         text = message.text or message.caption
         if text:
-            score = await check_toxicity(text, context.bot)
-            if score >= TOXICITY_THRESHOLD:
-                await process_violation(context.application, message, user_id, score, "toxicity")
-                return
+            if message.text and message.text.startswith("/"):
+                cmd = message.text.split()[0][1:].split("@")[0].lower()
+                if cmd in SAFE_COMMANDS:
+                    return
+            result = await check_text(text, context.bot)
+            if result:
+                flagged = result.get("flagged", False)
+                if flagged:
+                    cats = result.get("flags") or result.get("categories") or {}
+                    reason_list = [k for k, v in cats.items() if v]
+                    reason = ", ".join(reason_list) if reason_list else "violation"
+                    score = float(result.get("score", 1.0))
+                    await process_violation(context.application, message, user_id, score, reason)
+                    return
 
         media = None
         if message.photo:
@@ -140,7 +180,7 @@ def register(app: Application):
             except Exception:
                 logger.exception("Failed to restrict user on join")
 
-    app.add_handler(MessageHandler(~filters.StatusUpdate.ALL, moderate_messages))
+    app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, moderate_messages))
     app.add_handler(ChatMemberHandler(check_new_member, ChatMemberHandler.CHAT_MEMBER))
 
     logger.info("✅ Moderation handlers registered successfully.")
