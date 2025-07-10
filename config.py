@@ -31,8 +31,11 @@ class Config:
     # Prefer DB_FILE to avoid clashing with hosting providers that predefine
     # DATABASE_URL for Postgres connections (e.g. Render.com). Fallback to
     # DATABASE_URL if provided and looks like a file path.
-    _db_file = os.getenv("DB_FILE")
-    _db_url = os.getenv("DATABASE_URL", "bot.db")
+    _db_file = os.getenv("DB_FILE") or None
+    _db_url = os.getenv("DATABASE_URL")
+
+    if not _db_url:
+        _db_url = "bot.db"
 
     if _db_file:
         DATABASE_URL = _db_file
@@ -55,7 +58,8 @@ class Config:
     if "://" not in DATABASE_URL and DATABASE_URL not in ("", ":memory:"):
         db_dir = os.path.dirname(DATABASE_URL) or "."
         if not os.access(db_dir, os.W_OK):
-            tmp_path = os.path.join("/tmp", os.path.basename(DATABASE_URL))
+            base = os.path.basename(DATABASE_URL) or "bot.db"
+            tmp_path = os.path.join("/tmp", base)
             logger.warning(
                 "DB path %s not writable; using %s instead", DATABASE_URL, tmp_path
             )
