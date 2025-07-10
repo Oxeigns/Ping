@@ -27,6 +27,7 @@ class Config:
 
     PERSPECTIVE_API_KEY = os.getenv("PERSPECTIVE_API_KEY", "")
     IMAGE_MOD_API_KEY = os.getenv("IMAGE_MOD_API_KEY", "")
+    PANEL_IMAGE = os.getenv("PANEL_IMAGE")
 
     # Prefer DB_FILE to avoid clashing with hosting providers that predefine
     # DATABASE_URL for Postgres connections (e.g. Render.com). Fallback to
