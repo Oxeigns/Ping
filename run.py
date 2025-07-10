@@ -13,12 +13,24 @@ from moderation import register as register_moderation
 
 async def post_init(application):
     db_url = Config.DATABASE_URL
-    if "://" not in db_url and db_url not in ("", ":memory:"):
-        db_dir = os.path.dirname(db_url)
+
+    # Extract filesystem path from "file:" URLs so we can create directories
+    if db_url.startswith("file:"):
+        from urllib.parse import urlparse, unquote
+
+        parsed = urlparse(db_url)
+        db_path = unquote(parsed.path or parsed.netloc)
+        uri = True
+    else:
+        db_path = db_url
+        uri = False
+
+    # Create directory for SQLite database if needed
+    if db_path not in ("", ":memory:"):
+        db_dir = os.path.dirname(db_path)
         if db_dir:
             os.makedirs(db_dir, exist_ok=True)
 
-    uri = db_url.startswith("file:")
     application.db = await aiosqlite.connect(db_url, uri=uri)
     await init_db(application.db)
 
