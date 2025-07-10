@@ -42,6 +42,7 @@ def main() -> None:
         .post_init(post_init)
         .build()
     )
+    application.config = Config
 
     register_start(application)
     register_admin(application)

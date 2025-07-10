@@ -5,6 +5,7 @@ from telegram import (
     InlineKeyboardButton,
     InputMediaPhoto,
 )
+from telegram.error import BadRequest
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -43,9 +44,26 @@ def register(app: Application):
             update.effective_user.id,
             update.effective_chat.id,
         )
-        await message.reply_text(
+
+        caption = (
             "**👋 Welcome to the Advanced Moderation Bot!**\n\n"
-            "Use the control panel below to manage your profile, broadcast, or get help.",
+            "Use the control panel below to manage your profile, broadcast, or get help."
+        )
+
+        image = getattr(app.config, "PANEL_IMAGE", None)
+        if image:
+            try:
+                await message.reply_photo(
+                    image,
+                    caption=caption,
+                    reply_markup=main_menu(),
+                )
+                return
+            except Exception as e:
+                logger.debug("failed to send panel image: %s", e)
+
+        await message.reply_text(
+            caption,
             reply_markup=main_menu(),
             disable_web_page_preview=True,
         )
@@ -118,14 +136,17 @@ def register(app: Application):
     async def cb_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
-        await query.message.edit_text(
+        help_text = (
             "**📘 Bot Help**\n\n"
-            "`/profile` - View your moderation profile\n"
-            "`/approve` - Approve user\n"
-            "`/unapprove` - Revoke approval\n"
-            "`/broadcast` - Owner broadcast\n"
-            "`/rmwarn` - Reset warnings\n"
-            "`/start`, `/menu`, `/help` - Show control panel",
+            "• `/profile` - View your moderation profile\n"
+            "• `/approve` - Approve user\n"
+            "• `/unapprove` - Revoke approval\n"
+            "• `/broadcast` - Owner broadcast\n"
+            "• `/rmwarn` - Reset warnings\n"
+            "• `/start`, `/menu`, `/help` - Show control panel"
+        )
+        await query.message.edit_text(
+            help_text,
             reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton("🔙 Back to Menu", callback_data="back_home")]]
             ),
@@ -134,7 +155,15 @@ def register(app: Application):
 
     async def cb_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
-        await query.answer("🛠️ Group settings panel will be available soon!", show_alert=True)
+        await query.answer()
+        await query.message.edit_text(
+            "**🛠 Group Configuration**\n\n"
+            "This panel will let you manage group moderation settings in future releases.",
+            reply_markup=InlineKeyboardMarkup(
+                [[InlineKeyboardButton("🔙 Back to Menu", callback_data="back_home")]]
+            ),
+            disable_web_page_preview=True,
+        )
 
     async def cb_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
@@ -150,11 +179,19 @@ def register(app: Application):
     async def cb_back_home(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
-        await query.message.edit_text(
-            "**👋 Welcome back to the main menu!**",
-            reply_markup=main_menu(),
-            disable_web_page_preview=True,
-        )
+        text = "**👋 Welcome back to the main menu!**"
+        try:
+            await query.message.edit_text(
+                text,
+                reply_markup=main_menu(),
+                disable_web_page_preview=True,
+            )
+        except BadRequest:
+            await query.message.edit_caption(
+                text,
+                reply_markup=main_menu(),
+                disable_web_page_preview=True,
+            )
 
     async def close_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
