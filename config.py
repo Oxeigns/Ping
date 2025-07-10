@@ -1,5 +1,6 @@
 import os
 import logging
+from urllib.parse import urlparse, unquote
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -32,6 +33,7 @@ class Config:
     # DATABASE_URL if provided and looks like a file path.
     _db_file = os.getenv("DB_FILE")
     _db_url = os.getenv("DATABASE_URL", "bot.db")
+
     if _db_file:
         DATABASE_URL = _db_file
     elif _db_url.startswith("postgres://") or _db_url.startswith("postgresql://"):
@@ -41,6 +43,10 @@ class Config:
             _db_url,
         )
         DATABASE_URL = "bot.db"
+    elif _db_url.startswith("sqlite:"):
+        parsed = urlparse(_db_url)
+        path = unquote(parsed.path or parsed.netloc)
+        DATABASE_URL = f"file:{path}?{parsed.query}" if parsed.query else path
     else:
         DATABASE_URL = _db_url
 

@@ -18,7 +18,8 @@ async def post_init(application):
         if db_dir:
             os.makedirs(db_dir, exist_ok=True)
 
-    application.db = await aiosqlite.connect(db_url)
+    uri = db_url.startswith("file:")
+    application.db = await aiosqlite.connect(db_url, uri=uri)
     await init_db(application.db)
 
 
