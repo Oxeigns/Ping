@@ -50,6 +50,17 @@ class Config:
     else:
         DATABASE_URL = _db_url
 
+    # When using a relative SQLite path on read-only filesystems (e.g. Render),
+    # fall back to a writable location under /tmp.
+    if "://" not in DATABASE_URL and DATABASE_URL not in ("", ":memory:"):
+        db_dir = os.path.dirname(DATABASE_URL) or "."
+        if not os.access(db_dir, os.W_OK):
+            tmp_path = os.path.join("/tmp", os.path.basename(DATABASE_URL))
+            logger.warning(
+                "DB path %s not writable; using %s instead", DATABASE_URL, tmp_path
+            )
+            DATABASE_URL = tmp_path
+
     _sight = IMAGE_MOD_API_KEY.split(":", 1)
     SIGHTENGINE_USER = _sight[0] if _sight else ""
     SIGHTENGINE_SECRET = _sight[1] if len(_sight) > 1 else ""
