@@ -57,6 +57,7 @@ Edit `.env` with the following keys:
 - `IMAGE_MOD_API_KEY` – Sightengine credentials `user:secret`
 - `DB_FILE` – path to the SQLite DB file. By default the value of `DATABASE_URL` is used unless it looks like a Postgres connection string. This avoids issues with hosts like Render that automatically define `DATABASE_URL` for Postgres.
 - `PANEL_IMAGE` – optional URL or file path to an image shown with the control panel.
+- `MOD_API_URL` – override the default moderation API endpoint.
 - `DEBUG_UPDATES` – set to `1` to enable verbose logging of every incoming update. Useful when troubleshooting why the bot is not receiving commands.
 
 ## Troubleshooting MTProto connectivity on Render
