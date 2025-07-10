@@ -25,10 +25,9 @@ class Config:
         LOG_CHANNEL = -1002867268050
         logger.warning("Invalid LOG_CHANNEL_ID %r, falling back to %d", _log_id, LOG_CHANNEL)
 
-    PERSPECTIVE_API_KEY = os.getenv("PERSPECTIVE_API_KEY", "")
     IMAGE_MOD_API_KEY = os.getenv("IMAGE_MOD_API_KEY", "")
     PANEL_IMAGE = os.getenv("PANEL_IMAGE")
-    MOD_API_URL = os.getenv("MOD_API_URL", "https://api.safone.dev/moderation")
+    DEEPAI_API_KEY = os.getenv("DEEPAI_API_KEY")
 
     # Prefer DB_FILE to avoid clashing with hosting providers that predefine
     # DATABASE_URL for Postgres connections (e.g. Render.com). Fallback to

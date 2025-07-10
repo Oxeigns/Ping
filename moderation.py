@@ -40,7 +40,7 @@ async def check_text(text: str, bot=None) -> dict | None:
         resp = await asyncio.to_thread(
             requests.post,
             MOD_API_URL,
-            headers={"api-key": "4d428d58-a5d2-452b-8439-d4e4dd7372f5"},
+            headers={"api-key": Config.DEEPAI_API_KEY},
             data={"text": text},
             timeout=10,
         )
