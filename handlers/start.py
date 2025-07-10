@@ -160,13 +160,17 @@ def register(app: Application):
             "• `/rmwarn` - Reset warnings\n"
             "• `/start`, `/menu`, `/help` - Show control panel"
         )
-        await query.message.edit_text(
-            help_text,
-            reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("🔙 Back to Menu", callback_data="back_home")]]
-            ),
-            disable_web_page_preview=True,
-        )
+        try:
+            await query.message.edit_text(
+                help_text,
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("🔙 Back to Menu", callback_data="back_home")]]
+                ),
+                disable_web_page_preview=True,
+            )
+        except BadRequest as e:
+            if "Message is not modified" not in str(e):
+                raise
 
     @catch_errors
     async def cb_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
