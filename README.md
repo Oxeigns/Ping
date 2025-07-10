@@ -17,6 +17,7 @@ A modular Telegram bot built with **Pyrogram** for automated AI-powered moderati
 - `/ping` – check bot status
 - `/approve` `/unapprove` `/approved` `/rmwarn` – admin tools
 - `/broadcast <text>` – owner broadcast
+- `/modcheck` – test moderation API
 
 ## Usage
 1. Start the bot in a private chat or add it to a group.
