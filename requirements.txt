@@ -1,3 +1,4 @@
+python-telegram-bot==20.8
 pyrogram==2.0.106
 aiohttp==3.9.4
 aiosqlite==0.19.0
