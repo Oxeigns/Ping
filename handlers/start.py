@@ -8,12 +8,11 @@ from pyrogram.types import (
     InputMediaPhoto,
 )
 
-from helpers import get_or_create_user
+from helpers import catch_errors, get_or_create_user
 
 logger = logging.getLogger(__name__)
 
 def register(app):
-    print("start.register called")
     def main_menu() -> InlineKeyboardMarkup:
         return InlineKeyboardMarkup(
             [
@@ -30,10 +29,9 @@ def register(app):
         "approve", "unapprove", "approved", "rmwarn", "broadcast",
     }
 
-    @app.on_message(filters.command(["start", "menu", "help"]))
+    @app.on_message(filters.command(["start", "menu", "help"]) & (filters.private | filters.group))
+    @catch_errors
     async def start_handler(client, message: Message):
-        print("handler triggered")
-        print(f"🟢 Received /{message.command[0]} from {message.from_user.id} in chat {message.chat.id}")
         logger.info("Command %s from %s in %s", message.command[0].lower(), message.from_user.id, message.chat.id)
         await message.reply_text(
             "**👋 Welcome to the Advanced Moderation Bot!**\n\n"
@@ -42,16 +40,15 @@ def register(app):
             disable_web_page_preview=True,
         )
 
-    @app.on_message(filters.command("ping"))
+    @app.on_message(filters.command("ping") & (filters.private | filters.group))
+    @catch_errors
     async def ping_handler(client, message: Message):
-        print("handler triggered")
-        print(f"🟢 /ping received from {message.from_user.id} in chat {message.chat.id}")
         logger.info("/ping by %s in %s", message.from_user.id, message.chat.id)
         await message.reply_text("🏓 Pong!")
 
-    @app.on_message(filters.command("profile"))
+    @app.on_message(filters.command("profile") & (filters.private | filters.group))
+    @catch_errors
     async def profile_handler(client, message: Message):
-        print(f"🟢 /profile received from {message.from_user.id}")
         logger.info("/profile by %s in %s", message.from_user.id, message.chat.id)
         target = message.reply_to_message.from_user if message.reply_to_message else message.from_user
         tg_user = await client.get_users(target.id)
@@ -77,6 +74,7 @@ def register(app):
         await message.reply_text(text, reply_markup=keyboard, disable_web_page_preview=True)
 
     @app.on_callback_query(filters.regex("^open_profile$"))
+    @catch_errors
     async def cb_profile(client, callback: CallbackQuery):
         await callback.answer()
         tg_user = await client.get_users(callback.from_user.id)
@@ -109,6 +107,7 @@ def register(app):
         )
 
     @app.on_callback_query(filters.regex("^help$"))
+    @catch_errors
     async def cb_help(client, callback: CallbackQuery):
         await callback.answer()
         await callback.message.edit_text(
@@ -126,10 +125,12 @@ def register(app):
         )
 
     @app.on_callback_query(filters.regex("^settings$"))
+    @catch_errors
     async def cb_settings(client, callback: CallbackQuery):
         await callback.answer("🛠️ Group settings panel will be available soon!", show_alert=True)
 
     @app.on_callback_query(filters.regex("^bc$"))
+    @catch_errors
     async def cb_broadcast(client, callback: CallbackQuery):
         await callback.answer()
         await callback.message.edit_text(
@@ -141,6 +142,7 @@ def register(app):
         )
 
     @app.on_callback_query(filters.regex("^back_home$"))
+    @catch_errors
     async def cb_back_home(client, callback: CallbackQuery):
         await callback.answer()
         await callback.message.edit_text(
@@ -150,16 +152,17 @@ def register(app):
         )
 
     @app.on_callback_query(filters.regex("^close$"))
+    @catch_errors
     async def close_cb(client, callback: CallbackQuery):
         await callback.answer()
         await callback.message.delete()
 
     # Unknown command fallback
-    @app.on_message(filters.regex("^/"), group=999)
+    @app.on_message(filters.regex("^/") & filters.private, group=999)
+    @catch_errors
     async def unknown(client, message: Message):
         command = message.text.split()[0][1:].split("@")[0].lower()
         if command not in COMMANDS:
-            print(f"⚠️ Unknown command: {command} from {message.from_user.id}")
             await message.reply_text("❌ Unknown command. Use /help to see available options.")
 
     logger.info("✅ Start handlers registered.")

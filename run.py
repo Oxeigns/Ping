@@ -6,11 +6,11 @@ from PIL import __version__ as PIL_VERSION
 from dotenv import load_dotenv
 
 import aiosqlite
-from pyrogram import Client, idle
+from pyrogram import Client
 import asyncio
 
 import handlers
-# moderation  # Temporarily disabled for testing
+import moderation
 load_dotenv()
 from config import Config
 from database import init_db
@@ -78,9 +78,9 @@ async def main():
     handlers.register_all(app)
     logger.info("✅ Handlers registered.")
 
-    # Optional: Register moderation
-    # moderation.register(app)
-    # logger.info("✅ Moderation registered.")
+    # Register moderation
+    moderation.register(app)
+    logger.info("✅ Moderation registered.")
 
     if os.getenv("DEBUG_UPDATES"):
         try:
@@ -97,14 +97,9 @@ async def main():
         logger.exception("❌ Failed to connect to Telegram: %s", e)
         raise
 
-    # Log all incoming messages (for testing)
-    @app.on_message()
-    async def catch_all(client, message):
-        logger.info("📩 Received message from %s: %s", message.from_user.id, message.text)
-
     logger.info("🤖 Bot started. Waiting for updates...")
     try:
-        await idle()
+        await app.idle()
     except asyncio.CancelledError:
         logger.info("Stop signal received (SIGINT). Exiting...")
         raise
