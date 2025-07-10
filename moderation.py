@@ -183,7 +183,9 @@ def register(app: Application):
             except Exception:
                 logger.exception("Failed to restrict user on join")
 
-    app.add_handler(MessageHandler(filters.text & ~filters.private, moderate_messages))
+    app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.ChatType.PRIVATE, moderate_messages)
+    )
     app.add_handler(ChatMemberHandler(check_new_member, ChatMemberHandler.CHAT_MEMBER))
 
     logger.info("✅ Moderation handlers registered successfully.")
