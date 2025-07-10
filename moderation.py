@@ -1,7 +1,13 @@
 import logging
-from pyrogram import filters
-from pyrogram.enums import ChatMemberStatus, ParseMode
-from pyrogram.types import Message, ChatMemberUpdated, ChatPermissions
+from telegram import Update, ChatPermissions
+from telegram.constants import ChatMemberStatus, ParseMode
+from telegram.ext import (
+    Application,
+    MessageHandler,
+    ChatMemberHandler,
+    ContextTypes,
+    filters,
+)
 
 from config import Config
 from helpers import (
@@ -24,7 +30,7 @@ SAFE_COMMANDS = [
     "approve", "unapprove", "broadcast"
 ]
 
-async def process_violation(client, message: Message, user_id: int, score: float, reason: str):
+async def process_violation(application: Application, message, user_id: int, score: float, reason: str):
     logger.warning("🔴 Violation Detected | Reason: %s | Score: %.2f | User: %d", reason, score, user_id)
 
     try:
@@ -32,45 +38,45 @@ async def process_violation(client, message: Message, user_id: int, score: float
     except Exception as e:
         logger.error("Failed to delete message: %s", e)
 
-    user = await add_warning(client.db, user_id, score)
-    await add_log(client.db, user_id, message.chat.id, reason, score)
+    user = await add_warning(application.db, user_id, score)
+    await add_log(application.db, user_id, message.chat.id, reason, score)
 
     if user["warnings"] >= WARN_THRESHOLD:
         try:
-            await message.chat.restrict(user_id, ChatPermissions())
-            await client.send_message(
+            await application.bot.restrict_chat_member(message.chat.id, user_id, ChatPermissions())
+            await application.bot.send_message(
                 message.chat.id,
                 f"🔇 <b>User {user_id} has been muted for repeated {reason} violations.</b>",
-                parse_mode=ParseMode.HTML
+                parse_mode=ParseMode.HTML,
             )
         except Exception:
             logger.exception("Failed to mute user")
     else:
-        await client.send_message(
+        await application.bot.send_message(
             message.chat.id,
             f"⚠️ <b>Warning issued for {reason}</b>\nTotal warnings: <code>{user['warnings']}</code>",
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
         )
 
     if Config.LOG_CHANNEL:
         try:
-            await client.send_message(
+            await application.bot.send_message(
                 Config.LOG_CHANNEL,
                 f"📛 Violation Log:\n<b>User:</b> <code>{user_id}</code>\n<b>Chat:</b> <code>{message.chat.id}</code>\n<b>Reason:</b> {reason}\n<b>Score:</b> {score}",
-                parse_mode=ParseMode.HTML
+                parse_mode=ParseMode.HTML,
             )
         except Exception:
             logger.warning("Could not send log to LOG_CHANNEL")
 
-def register(app):
+def register(app: Application):
     # Ignore commands and service messages in moderation
-    @app.on_message(~filters.service & ~filters.command(SAFE_COMMANDS))
-    async def moderate_messages(client, message: Message):
-        if not message.from_user or message.from_user.is_self:
+    async def moderate_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        message = update.effective_message
+        if not message or not update.effective_user:
             return
 
-        user_id = message.from_user.id
-        chat_id = message.chat.id
+        user_id = update.effective_user.id
+        chat_id = update.effective_chat.id
 
         if user_id == Config.OWNER_ID or await is_admin(message):
             return
@@ -83,7 +89,7 @@ def register(app):
         if text:
             score = await check_toxicity(text)
             if score >= TOXICITY_THRESHOLD:
-                await process_violation(client, message, user_id, score, "toxicity")
+                await process_violation(context.application, message, user_id, score, "toxicity")
                 return
 
         media = None
@@ -99,18 +105,20 @@ def register(app):
             media = message.document.file_id
 
         if media:
-            file = await client.download_media(media, in_memory=True)
+            file = await context.bot.get_file(media)
+            file = await file.download_as_bytearray()
             result = await check_image(file)
             nudity = result.get("nudity", {}).get("sexual_activity", 0)
             drugs = result.get("drug", 0)
             score = max(nudity, drugs)
             if score >= NSFW_THRESHOLD:
-                await process_violation(client, message, user_id, score, "nsfw")
+                await process_violation(context.application, message, user_id, score, "nsfw")
 
-    @app.on_chat_member_updated()
-    async def check_new_member(client, chat_member: ChatMemberUpdated):
+    async def check_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        chat_member = update.chat_member
         if chat_member.new_chat_member.status not in {
-            ChatMemberStatus.MEMBER, ChatMemberStatus.RESTRICTED
+            ChatMemberStatus.MEMBER,
+            ChatMemberStatus.RESTRICTED,
         }:
             return
 
@@ -123,13 +131,16 @@ def register(app):
 
         if user["warnings"] >= WARN_THRESHOLD:
             try:
-                await client.restrict_chat_member(chat_id, user_id, ChatPermissions())
-                await client.send_message(
+                await context.bot.restrict_chat_member(chat_id, user_id, ChatPermissions())
+                await context.bot.send_message(
                     chat_id,
                     f"🔇 <b>{chat_member.from_user.mention} was muted on join due to past violations.</b>",
-                    parse_mode=ParseMode.HTML
+                    parse_mode=ParseMode.HTML,
                 )
             except Exception:
                 logger.exception("Failed to restrict user on join")
+
+    app.add_handler(MessageHandler(~filters.StatusUpdate.ALL, moderate_messages))
+    app.add_handler(ChatMemberHandler(check_new_member, ChatMemberHandler.CHAT_MEMBER))
 
     logger.info("✅ Moderation handlers registered successfully.")

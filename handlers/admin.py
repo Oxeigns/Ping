@@ -1,6 +1,11 @@
 import logging
-from pyrogram import filters
-from pyrogram.types import Message
+from telegram import Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+)
+from telegram.ext import MessageHandler, filters
 
 logger = logging.getLogger(__name__)
 
@@ -12,28 +17,30 @@ from helpers import (
 from config import Config
 
 
-def register(app):
-    @app.on_message(filters.command("broadcast") & filters.user(Config.OWNER_ID))
-    async def broadcast_handler(client, message: Message):
-        logger.info("/broadcast by %s", message.from_user.id)
-        if len(message.command) < 2:
-            await message.reply_text("⚠️ Usage:\n`/broadcast <message>`", quote=True)
+def register(app: Application):
+    async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if update.effective_user.id != Config.OWNER_ID:
+            return
+        if not context.args:
+            await update.message.reply_text("⚠️ Usage:\n`/broadcast <message>`", quote=True)
             return
 
-        text = message.text.split(None, 1)[1]
-        await message.reply_text("📢 Broadcasting your message...")
+        text = " ".join(context.args)
+        await update.message.reply_text("📢 Broadcasting your message...")
         sent = 0
-        async for dialog in app.get_dialogs():
+        async with app.db.execute("SELECT id FROM users") as cur:
+            rows = await cur.fetchall()
+        for row in rows:
             try:
-                await app.send_message(dialog.chat.id, text)
+                await context.bot.send_message(row[0], text)
                 sent += 1
             except Exception:
                 continue
 
-        await message.reply_text(f"✅ Broadcast sent to `{sent}` chats.")
+        await update.message.reply_text(f"✅ Broadcast sent to `{sent}` chats.")
 
-    @app.on_message(filters.command("approve"))
-    async def approve_handler(client, message: Message):
+    async def approve_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        message = update.effective_message
         if not await is_admin(message):
             return
         if not message.reply_to_message:
@@ -45,8 +52,8 @@ def register(app):
         await message.reply_text(f"✅ Approved [user](tg://user?id={user_id}).", disable_web_page_preview=True)
         logger.info("Approved user %s via %s", user_id, message.from_user.id)
 
-    @app.on_message(filters.command("unapprove"))
-    async def unapprove_handler(client, message: Message):
+    async def unapprove_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        message = update.effective_message
         if not await is_admin(message):
             return
         if not message.reply_to_message:
@@ -58,8 +65,8 @@ def register(app):
         await message.reply_text(f"❌ Unapproved [user](tg://user?id={user_id}).", disable_web_page_preview=True)
         logger.info("Unapproved user %s via %s", user_id, message.from_user.id)
 
-    @app.on_message(filters.command("approved"))
-    async def approved_list(client, message: Message):
+    async def approved_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        message = update.effective_message
         if not await is_admin(message):
             return
 
@@ -74,8 +81,8 @@ def register(app):
         await message.reply_text("✅ **Approved Users:**\n" + "\n".join(lines), disable_web_page_preview=True)
         logger.info("Listed approved users for %s", message.from_user.id)
 
-    @app.on_message(filters.command("rmwarn"))
-    async def rmwarn_handler(client, message: Message):
+    async def rmwarn_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        message = update.effective_message
         if not await is_admin(message):
             return
         if not message.reply_to_message:
@@ -88,5 +95,11 @@ def register(app):
         await app.db.commit()
         await message.reply_text(f"✅ Cleared all warnings for [user](tg://user?id={user_id}).", disable_web_page_preview=True)
         logger.info("Cleared warnings for %s via %s", user_id, message.from_user.id)
+    app.add_handler(CommandHandler("broadcast", broadcast_handler))
+    app.add_handler(CommandHandler("approve", approve_handler))
+    app.add_handler(CommandHandler("unapprove", unapprove_handler))
+    app.add_handler(CommandHandler("approved", approved_list))
+    app.add_handler(CommandHandler("rmwarn", rmwarn_handler))
 
     logger.info("✅ Admin handlers registered.")
+

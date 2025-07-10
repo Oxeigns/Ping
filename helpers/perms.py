@@ -1,6 +1,6 @@
 import logging
-from pyrogram.types import Message
-from pyrogram.enums import ChatMemberStatus
+from telegram import Message
+from telegram.constants import ChatMemberStatus
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ async def is_admin(message: Message) -> bool:
         member = await message.chat.get_member(message.from_user.id)
         return member.status in (
             ChatMemberStatus.ADMINISTRATOR,
-            ChatMemberStatus.OWNER  # or .CREATOR depending on Pyrogram version
+            ChatMemberStatus.OWNER,
         )
     except Exception as e:
         logger.warning("⚠️ Failed to check admin status for user %s: %s", message.from_user.id, e)
