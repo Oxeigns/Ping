@@ -16,13 +16,14 @@ from helpers import (
     add_warning,
     add_log,
     check_image,
+    check_toxicity,
     get_or_create_user,
     is_admin,
 )
 
 logger = logging.getLogger(__name__)
 
-MOD_API_URL = "https://api.safone.dev/moderation"
+MOD_API_URL = Config.MOD_API_URL
 
 TOXICITY_THRESHOLD = 0.85
 NSFW_THRESHOLD = 0.85
@@ -35,7 +36,9 @@ SAFE_COMMANDS = [
 
 
 async def check_text(text: str, bot=None) -> dict | None:
-    """Send text to external moderation API and return parsed JSON."""
+    """Send text to external moderation API and return parsed JSON.
+    Fall back to direct Perspective API calls if the request fails.
+    """
     try:
         resp = await asyncio.to_thread(
             requests.post,
@@ -58,7 +61,16 @@ async def check_text(text: str, bot=None) -> dict | None:
                 )
             except Exception:
                 logger.debug("Could not notify log channel about API failure")
-        return None
+
+        tox_score = await check_toxicity(text, bot)
+        if tox_score == 0.0:
+            return None
+        flagged = tox_score >= TOXICITY_THRESHOLD
+        return {
+            "flagged": flagged,
+            "score": tox_score,
+            "flags": {"toxicity": flagged},
+        }
 
 async def process_violation(application: Application, message, user_id: int, score: float, reason: str):
     logger.warning("🔴 Violation Detected | Reason: %s | Score: %.2f | User: %d", reason, score, user_id)
