@@ -8,6 +8,8 @@ from database import (
     add_warning,
     approve_user,
     add_log,
+    upsert_group,
+    remove_group,
 )
 
 from .api import (
@@ -28,6 +30,8 @@ __all__ = [
     "add_warning",
     "approve_user",
     "add_log",
+    "upsert_group",
+    "remove_group",
     "check_toxicity",
     "check_image",
     "is_admin",
