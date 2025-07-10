@@ -87,7 +87,7 @@ def register(app: Application):
 
         text = message.text or message.caption
         if text:
-            score = await check_toxicity(text)
+            score = await check_toxicity(text, context.bot)
             if score >= TOXICITY_THRESHOLD:
                 await process_violation(context.application, message, user_id, score, "toxicity")
                 return
@@ -107,7 +107,7 @@ def register(app: Application):
         if media:
             file = await context.bot.get_file(media)
             file = await file.download_as_bytearray()
-            result = await check_image(file)
+            result = await check_image(file, context.bot)
             nudity = result.get("nudity", {}).get("sexual_activity", 0)
             drugs = result.get("drug", 0)
             score = max(nudity, drugs)

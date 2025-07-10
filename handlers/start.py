@@ -6,16 +6,23 @@ from telegram import (
     InputMediaPhoto,
 )
 from telegram.error import BadRequest
+from telegram.constants import ChatType, ChatMemberStatus, ParseMode
 from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
     ContextTypes,
     MessageHandler,
+    ChatMemberHandler,
     filters,
 )
 
-from helpers import get_or_create_user
+from helpers import (
+    get_or_create_user,
+    upsert_group,
+    remove_group,
+    catch_errors,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +43,7 @@ def register(app: Application):
         "approve", "unapprove", "approved", "rmwarn", "broadcast",
     }
 
+    @catch_errors
     async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = update.effective_message
         logger.info(
@@ -45,8 +53,21 @@ def register(app: Application):
             update.effective_chat.id,
         )
 
+        if message.chat.type == ChatType.PRIVATE:
+            await get_or_create_user(app.db, update.effective_user.id)
+            if app.config.LOG_CHANNEL:
+                try:
+                    await context.bot.send_message(
+                        app.config.LOG_CHANNEL,
+                        f"🔔 <b>Start</b> - {update.effective_user.mention_html()} (@{update.effective_user.username or 'n/a'})",
+                        parse_mode=ParseMode.HTML,
+                    )
+                except Exception as e:
+                    logger.debug("failed to log start: %s", e)
+
+        name = update.effective_user.first_name
         caption = (
-            "**👋 Welcome to the Advanced Moderation Bot!**\n\n"
+            f"**👋 Welcome {name}!**\n\n"
             "Use the control panel below to manage your profile, broadcast, or get help."
         )
 
@@ -68,10 +89,12 @@ def register(app: Application):
             disable_web_page_preview=True,
         )
 
+    @catch_errors
     async def ping_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info("/ping by %s in %s", update.effective_user.id, update.effective_chat.id)
         await update.effective_message.reply_text("🏓 Pong!")
 
+    @catch_errors
     async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = update.effective_message
         logger.info("/profile by %s in %s", update.effective_user.id, update.effective_chat.id)
@@ -88,18 +111,9 @@ def register(app: Application):
         )
 
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Close", callback_data="close")]])
-        try:
-            photos = await context.bot.get_user_profile_photos(tg_user.id, limit=1)
-            if photos.total_count:
-                file = await photos.photos[0][-1].get_file()
-                photo = await file.download_as_bytearray()
-                await message.reply_photo(photo, caption=text, reply_markup=keyboard)
-                return
-        except Exception as e:
-            logger.debug("failed to send photo: %s", e)
-
         await message.reply_text(text, reply_markup=keyboard, disable_web_page_preview=True)
 
+    @catch_errors
     async def cb_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
@@ -133,6 +147,7 @@ def register(app: Application):
             disable_web_page_preview=True,
         )
 
+    @catch_errors
     async def cb_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
@@ -153,6 +168,7 @@ def register(app: Application):
             disable_web_page_preview=True,
         )
 
+    @catch_errors
     async def cb_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
@@ -165,6 +181,7 @@ def register(app: Application):
             disable_web_page_preview=True,
         )
 
+    @catch_errors
     async def cb_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
@@ -176,6 +193,7 @@ def register(app: Application):
             disable_web_page_preview=True,
         )
 
+    @catch_errors
     async def cb_back_home(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
@@ -193,11 +211,48 @@ def register(app: Application):
                 disable_web_page_preview=True,
             )
 
+    @catch_errors
     async def close_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
         await query.message.delete()
 
+    @catch_errors
+    async def track_my_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        member = update.my_chat_member
+        chat = member.chat
+        old = member.old_chat_member.status
+        new = member.new_chat_member.status
+        actor = member.from_user
+
+        if new in {ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR} and old in {ChatMemberStatus.LEFT, ChatMemberStatus.KICKED}:
+            try:
+                members = await context.bot.get_chat_member_count(chat.id)
+            except Exception:
+                members = 0
+            link = f"https://t.me/{chat.username}" if chat.username else ""
+            await upsert_group(app.db, chat.id, chat.title or "", chat.username, members, link)
+            text = (
+                f"✅ Added to <b>{chat.title}</b>\n"
+                f"Members: {members}\n"
+                f"Link: {link or 'N/A'}\n"
+                f"By: {actor.mention_html()}"
+            )
+        elif new in {ChatMemberStatus.LEFT, ChatMemberStatus.KICKED}:
+            await remove_group(app.db, chat.id)
+            text = (
+                f"❌ Removed from <b>{chat.title}</b>\n"
+                f"By: {actor.mention_html()}"
+            )
+        else:
+            return
+        if app.config.LOG_CHANNEL:
+            try:
+                await context.bot.send_message(app.config.LOG_CHANNEL, text, parse_mode=ParseMode.HTML)
+            except Exception as e:
+                logger.debug("failed to log group event: %s", e)
+
+    @catch_errors
     async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
         command = update.message.text.split()[0][1:].split("@")[0].lower()
         if command not in COMMANDS:
@@ -212,6 +267,7 @@ def register(app: Application):
     app.add_handler(CallbackQueryHandler(cb_broadcast, pattern="^bc$"))
     app.add_handler(CallbackQueryHandler(cb_back_home, pattern="^back_home$"))
     app.add_handler(CallbackQueryHandler(close_cb, pattern="^close$"))
+    app.add_handler(ChatMemberHandler(track_my_member, ChatMemberHandler.MY_CHAT_MEMBER))
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE & filters.COMMAND, unknown), group=999)
 
     logger.info("✅ Start handlers registered.")
