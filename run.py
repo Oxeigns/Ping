@@ -1,4 +1,5 @@
 import asyncio
+import os
 import aiosqlite
 from telegram.ext import ApplicationBuilder
 
@@ -11,7 +12,13 @@ from moderation import register as register_moderation
 
 
 async def post_init(application):
-    application.db = await aiosqlite.connect(Config.DATABASE_URL)
+    db_url = Config.DATABASE_URL
+    if "://" not in db_url and db_url not in ("", ":memory:"):
+        db_dir = os.path.dirname(db_url)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+
+    application.db = await aiosqlite.connect(db_url)
     await init_db(application.db)
 
 
