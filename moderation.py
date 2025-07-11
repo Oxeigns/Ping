@@ -1,5 +1,5 @@
 import logging
-from pathlib import Path
+import asyncio
 from telegram import Update, ChatPermissions
 from telegram.constants import ChatMemberStatus, ParseMode
 from telegram.ext import (
@@ -16,31 +16,24 @@ from helpers import (
     add_log,
     get_or_create_user,
     is_admin,
+    is_approved,
 )
+from helpers.text_filter import load_banned_words, contains_banned_word
+from googletrans import Translator
 
 logger = logging.getLogger(__name__)
 
 # Warning threshold before muting
 WARN_THRESHOLD = 3
 
-# Load banned words from a local file
-BANNED_WORDS_FILE = Path(__file__).with_name("banned_words.txt")
-try:
-    with open(BANNED_WORDS_FILE, "r", encoding="utf-8") as f:
-        BANNED_WORDS = {line.strip().lower() for line in f if line.strip() and not line.startswith("#")}
-except FileNotFoundError:
-    logger.warning("banned words file %s not found", BANNED_WORDS_FILE)
-    BANNED_WORDS = set()
+# Load banned words using helper
+BANNED_WORDS = load_banned_words()
+translator = Translator()
 
 SAFE_COMMANDS = [
-    "start", "menu", "help", "ping", "profile",
+    "start", "menu", "help", "ping",
     "approve", "unapprove", "broadcast"
 ]
-
-
-def contains_banned_word(text: str) -> bool:
-    lower = text.lower()
-    return any(word in lower for word in BANNED_WORDS)
 
 async def process_violation(application: Application, message, user_id: int, score: float, reason: str):
     logger.warning("🔴 Violation Detected | Reason: %s | Score: %.2f | User: %d", reason, score, user_id)
@@ -93,7 +86,7 @@ def register(app: Application):
             return
 
         user = await get_or_create_user(app.db, user_id)
-        if user.get("approved"):
+        if await is_approved(app.db, user_id):
             return
 
         text = message.text or message.caption
@@ -102,7 +95,15 @@ def register(app: Application):
                 cmd = message.text.split()[0][1:].split("@")[0].lower()
                 if cmd in SAFE_COMMANDS:
                     return
-            if contains_banned_word(text):
+            loop = asyncio.get_running_loop()
+            try:
+                translation = await loop.run_in_executor(None, translator.translate, text, "en")
+                scan_text = translation.text
+            except Exception as e:
+                logger.debug("translate failed: %s", e)
+                scan_text = text
+
+            if contains_banned_word(scan_text, BANNED_WORDS) or contains_banned_word(text, BANNED_WORDS):
                 await process_violation(
                     context.application,
                     message,
@@ -124,7 +125,7 @@ def register(app: Application):
         chat_id = chat_member.chat.id
 
         user = await get_or_create_user(app.db, user_id)
-        if user.get("approved"):
+        if await is_approved(app.db, user_id):
             return
 
         if user["warnings"] >= WARN_THRESHOLD:

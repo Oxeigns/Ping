@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from datetime import datetime
 import aiosqlite
 from telegram.ext import ApplicationBuilder, ContextTypes
 from telegram.error import Conflict
@@ -49,6 +50,7 @@ def main() -> None:
         .post_init(post_init)
         .build()
     )
+    application.start_time = datetime.utcnow()
     application.config = Config
 
     register_start(application)

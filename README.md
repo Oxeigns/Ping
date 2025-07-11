@@ -6,14 +6,12 @@ A modular Telegram bot built with **Pyrogram** for basic group moderation.
 - Manual text filtering using a configurable `banned_words.txt` file
 - Warn and mute users when banned words are used
 - Admin approval system and warning management
-- Profile system with inline buttons and profile photo
 - Broadcast system for the owner
 - Works in private chats and groups
 - Deployment ready for VPS (systemd) and Render.com
 
 ## Commands
 - `/start` `/menu` `/help` – show control panel
-- `/profile` – view user profile
 - `/ping` – check bot status
 - `/approve` `/unapprove` `/approved` `/rmwarn` – admin tools
 - `/broadcast <text>` – owner broadcast
@@ -21,7 +19,7 @@ A modular Telegram bot built with **Pyrogram** for basic group moderation.
 ## Usage
 1. Start the bot in a private chat or add it to a group.
 2. Use `/menu` to open the control panel. If `PANEL_IMAGE` is configured, the panel is shown with the image you provide.
-3. Explore the inline buttons to view your profile, configure groups or broadcast messages.
+3. Explore the inline buttons to configure groups or broadcast messages.
 
 ## Setup
 1. Install **Python 3.11** and create a virtual environment (optional).

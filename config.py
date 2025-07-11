@@ -26,6 +26,7 @@ class Config:
         logger.warning("Invalid LOG_CHANNEL_ID %r, falling back to %d", _log_id, LOG_CHANNEL)
 
     PANEL_IMAGE = os.getenv("PANEL_IMAGE")
+    DEV_URL = os.getenv("DEV_URL", "https://t.me/Oxeign")
 
     # Prefer DB_FILE to avoid clashing with hosting providers that predefine
     # DATABASE_URL for Postgres connections (e.g. Render.com). Fallback to
