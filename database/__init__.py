@@ -99,6 +99,15 @@ async def approve_user(db: aiosqlite.Connection, user_id: int, value: bool) -> D
     return await get_or_create_user(db, user_id)
 
 
+async def is_approved(db: aiosqlite.Connection, user_id: int) -> bool:
+    """Return True if the user is approved."""
+    async with db.execute("SELECT approved FROM users WHERE id=?", (user_id,)) as cur:
+        row = await cur.fetchone()
+    if row is None:
+        return False
+    return bool(row[0])
+
+
 async def add_log(db: aiosqlite.Connection, user_id: int, chat_id: int, reason: str, score: float):
     """
     Store a violation log for a user.
