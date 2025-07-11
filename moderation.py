@@ -1,6 +1,5 @@
 import logging
-import asyncio
-import requests
+from pathlib import Path
 from telegram import Update, ChatPermissions
 from telegram.constants import ChatMemberStatus, ParseMode
 from telegram.ext import (
@@ -15,19 +14,23 @@ from config import Config
 from helpers import (
     add_warning,
     add_log,
-    check_image,
     get_or_create_user,
     is_admin,
 )
 
 logger = logging.getLogger(__name__)
 
-# Endpoint for text moderation
-MOD_API_URL = "https://api.safone.dev/moderation"
-
-TOXICITY_THRESHOLD = 0.85
-NSFW_THRESHOLD = 0.85
+# Warning threshold before muting
 WARN_THRESHOLD = 3
+
+# Load banned words from a local file
+BANNED_WORDS_FILE = Path(__file__).with_name("banned_words.txt")
+try:
+    with open(BANNED_WORDS_FILE, "r", encoding="utf-8") as f:
+        BANNED_WORDS = {line.strip().lower() for line in f if line.strip() and not line.startswith("#")}
+except FileNotFoundError:
+    logger.warning("banned words file %s not found", BANNED_WORDS_FILE)
+    BANNED_WORDS = set()
 
 SAFE_COMMANDS = [
     "start", "menu", "help", "ping", "profile",
@@ -35,32 +38,9 @@ SAFE_COMMANDS = [
 ]
 
 
-async def check_text(text: str, bot=None) -> dict:
-    """Analyze text using Safone's moderation API."""
-    try:
-        resp = await asyncio.to_thread(
-            requests.post,
-            MOD_API_URL,
-            json={"text": text},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        data = resp.json() or {}
-        logger.debug("Moderation API response: %s", data)
-        return data
-    except Exception as exc:
-        logger.exception("Moderation API failure: %s", exc)
-        if bot and Config.LOG_CHANNEL:
-            try:
-                await bot.send_message(
-                    Config.LOG_CHANNEL,
-                    f"Moderation API error: {exc}",
-                    disable_notification=True,
-                )
-            except Exception:
-                logger.debug("Could not notify log channel about API failure")
-
-        return {}
+def contains_banned_word(text: str) -> bool:
+    lower = text.lower()
+    return any(word in lower for word in BANNED_WORDS)
 
 async def process_violation(application: Application, message, user_id: int, score: float, reason: str):
     logger.warning("🔴 Violation Detected | Reason: %s | Score: %.2f | User: %d", reason, score, user_id)
@@ -108,7 +88,6 @@ def register(app: Application):
             return
 
         user_id = update.effective_user.id
-        chat_id = update.effective_chat.id
 
         if user_id == Config.OWNER_ID or await is_admin(message):
             return
@@ -123,39 +102,15 @@ def register(app: Application):
                 cmd = message.text.split()[0][1:].split("@")[0].lower()
                 if cmd in SAFE_COMMANDS:
                     return
-            result = await check_text(text, context.bot)
-            if any(result.get(flag) for flag in ("is_offensive", "is_toxic", "is_nsfw")):
-                reason = "nsfw" if result.get("is_nsfw") else "toxicity"
+            if contains_banned_word(text):
                 await process_violation(
                     context.application,
                     message,
                     user_id,
                     1.0,
-                    reason,
+                    "banned word",
                 )
                 return
-
-        media = None
-        if message.photo:
-            media = message.photo.file_id
-        elif message.video:
-            media = message.video.file_id
-        elif message.animation:
-            media = message.animation.file_id
-        elif message.sticker:
-            media = message.sticker.file_id
-        elif message.document and message.document.mime_type.startswith("image/"):
-            media = message.document.file_id
-
-        if media:
-            file = await context.bot.get_file(media)
-            file = await file.download_as_bytearray()
-            result = await check_image(file, context.bot)
-            nudity = result.get("nudity", {}).get("sexual_activity", 0)
-            drugs = result.get("drug", 0)
-            score = max(nudity, drugs)
-            if score >= NSFW_THRESHOLD:
-                await process_violation(context.application, message, user_id, score, "nsfw")
 
     async def check_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_member = update.chat_member

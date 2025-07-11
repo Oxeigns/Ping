@@ -12,10 +12,6 @@ from database import (
     remove_group,
 )
 
-from .api import (
-    check_toxicity,
-    check_image,
-)
 
 from .perms import (
     is_admin,
@@ -32,8 +28,6 @@ __all__ = [
     "add_log",
     "upsert_group",
     "remove_group",
-    "check_toxicity",
-    "check_image",
     "is_admin",
     "is_owner",
     "catch_errors",
