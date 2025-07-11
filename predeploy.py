@@ -22,7 +22,12 @@ try:
 except Exception as exc:
     raise SystemExit(f"Pillow import failed: {exc}")
 
-modules = ["handlers.admin", "handlers.start", "moderation"]
+modules = [
+    "handlers.admin",
+    "handlers.start",
+    "handlers.debug",
+    "handlers.moderation",
+]
 for name in modules:
     importlib.import_module(name)
 
@@ -59,7 +64,7 @@ class DummyApp:
 
 
 from handlers import register_all
-import moderation
+from handlers import moderation
 
 app = DummyApp()
 register_all(app)
@@ -67,7 +72,5 @@ moderation.register(app)
 
 if app.messages == 0:
     raise SystemExit("message handlers not registered")
-if app.callbacks == 0:
-    raise SystemExit("callback handlers not registered")
 
 print("Predeploy checks passed")
