@@ -25,9 +25,7 @@ class Config:
         LOG_CHANNEL = -1002867268050
         logger.warning("Invalid LOG_CHANNEL_ID %r, falling back to %d", _log_id, LOG_CHANNEL)
 
-    IMAGE_MOD_API_KEY = os.getenv("IMAGE_MOD_API_KEY", "")
     PANEL_IMAGE = os.getenv("PANEL_IMAGE")
-    DEEPAI_API_KEY = os.getenv("DEEPAI_API_KEY")
 
     # Prefer DB_FILE to avoid clashing with hosting providers that predefine
     # DATABASE_URL for Postgres connections (e.g. Render.com). Fallback to
@@ -66,6 +64,3 @@ class Config:
             )
             DATABASE_URL = tmp_path
 
-    _sight = IMAGE_MOD_API_KEY.split(":", 1)
-    SIGHTENGINE_USER = _sight[0] if _sight else ""
-    SIGHTENGINE_SECRET = _sight[1] if len(_sight) > 1 else ""

@@ -1,10 +1,10 @@
 # Telegram Moderation Bot
 
-A modular Telegram bot built with **Pyrogram** for automated AI-powered moderation.
+A modular Telegram bot built with **Pyrogram** for basic group moderation.
 
 ## Features
-- Automatic text and image filtering using Google Perspective and Sightengine APIs
-- Warn and mute users based on toxicity and NSFW scores
+- Manual text filtering using a configurable `banned_words.txt` file
+- Warn and mute users when banned words are used
 - Admin approval system and warning management
 - Profile system with inline buttons and profile photo
 - Broadcast system for the owner
@@ -17,7 +17,6 @@ A modular Telegram bot built with **Pyrogram** for automated AI-powered moderati
 - `/ping` – check bot status
 - `/approve` `/unapprove` `/approved` `/rmwarn` – admin tools
 - `/broadcast <text>` – owner broadcast
-- `/modcheck` – test moderation API
 
 ## Usage
 1. Start the bot in a private chat or add it to a group.
@@ -41,11 +40,6 @@ sudo systemctl start pingbot
 ### Render.com
 Create a new **Background Worker** pointing to this repository. Render uses `render.yaml` for configuration. Render defaults to the latest Python version which may be incompatible with pinned dependencies. This project targets **Python 3.11**, so the repository includes a `runtime.txt` and `.python-version` file to explicitly set the Python version during deployment.
 `render.yaml` installs packages using the `--only-binary=:all:` flag to ensure pre-built wheels.
-## API Keys
-- [Perspective API](https://www.perspectiveapi.com/) for toxicity detection
-- [Sightengine](https://sightengine.com/) for image moderation
-
-
 ### Environment Variables
 Edit `.env` with the following keys:
 
@@ -53,12 +47,10 @@ Edit `.env` with the following keys:
 - `API_ID` / `API_HASH` – Telegram API credentials
 - `OWNER_ID` – your Telegram user ID
 - `LOG_CHANNEL_ID` – channel/group ID for logs
-- `PERSPECTIVE_API_KEY` – Google Perspective API key
-- `IMAGE_MOD_API_KEY` – Sightengine credentials `user:secret`
 - `DB_FILE` – path to the SQLite DB file. By default the value of `DATABASE_URL` is used unless it looks like a Postgres connection string. This avoids issues with hosts like Render that automatically define `DATABASE_URL` for Postgres.
 - `PANEL_IMAGE` – optional URL or file path to an image shown with the control panel.
-- `MOD_API_URL` – override the default moderation API endpoint.
 - `DEBUG_UPDATES` – set to `1` to enable verbose logging of every incoming update. Useful when troubleshooting why the bot is not receiving commands.
+- `banned_words.txt` – list of words or phrases to filter, one per line.
 
 ## Troubleshooting MTProto connectivity on Render
 
