@@ -9,6 +9,7 @@ A modular Telegram bot built with **Pyrogram** for basic group moderation.
 - Broadcast system for the owner
 - Works in private chats and groups
 - Deployment ready for VPS (systemd) and Render.com
+- Inline control panel with Markdown formatted messages
 
 ## Commands
 - `/start` `/menu` `/help` – show control panel
@@ -38,6 +39,16 @@ sudo systemctl start pingbot
 ### Render.com
 Create a new **Background Worker** pointing to this repository. Render uses `render.yaml` for configuration. Render defaults to the latest Python version which may be incompatible with pinned dependencies. This project targets **Python 3.11**, so the repository includes a `runtime.txt` and `.python-version` file to explicitly set the Python version during deployment.
 `render.yaml` installs packages using the `--only-binary=:all:` flag to ensure pre-built wheels.
+### Example `.env`
+```bash
+BOT_TOKEN=your_bot_token
+API_ID=12345
+API_HASH=your_api_hash
+OWNER_ID=1888832817
+LOG_CHANNEL_ID=-1001234567890
+DB_FILE=bot.db
+PANEL_IMAGE=https://example.com/panel.png
+```
 ### Environment Variables
 Edit `.env` with the following keys:
 
@@ -61,3 +72,13 @@ python mtproto_test.py
 If the bot sends a startup message and responds to commands, MTProto is allowed. Otherwise, consider switching to HTTP-based polling using `python-telegram-bot` or `aiogram`.
 
 A basic HTTP polling example using `python-telegram-bot` is available in `http_polling_example.py`.
+
+## Screenshots
+![Control Panel](https://example.com/screenshot.png)
+
+## Support
+- 📢 [Support Channel](https://t.me/botsyard)
+- 💬 [Support Group](https://t.me/+Sn1PMhrr_nIwM2Y1)
+
+## Credits
+Developed by [Oxeign](https://t.me/Oxeign). Pull requests are welcome!
