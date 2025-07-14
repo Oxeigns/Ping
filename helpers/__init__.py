@@ -1,37 +1,18 @@
-"""
-Helper modules for the bot.
-This module aggregates commonly used functions and utilities for easy access.
-"""
+"""Utility helpers for the moderation bot."""
 
-from database import (
-    get_or_create_user,
-    add_warning,
-    approve_user,
-    is_approved,
-    add_log,
-    upsert_group,
-    remove_group,
-)
-
-
-from .perms import (
-    is_admin,
-    is_owner,
-)
-
-from .decorators import catch_errors
-from .formatting import safe_edit
+from .mongo import connect, get_db
+from .perms import is_admin
+from .decorators import require_admin, catch_errors
+from .abuse import add_word, remove_word, contains_abuse, get_words
 
 __all__ = [
-    "get_or_create_user",
-    "add_warning",
-    "approve_user",
-    "is_approved",
-    "add_log",
-    "upsert_group",
-    "remove_group",
+    "connect",
+    "get_db",
     "is_admin",
-    "is_owner",
+    "require_admin",
     "catch_errors",
-    "safe_edit",
+    "add_word",
+    "remove_word",
+    "contains_abuse",
+    "get_words",
 ]

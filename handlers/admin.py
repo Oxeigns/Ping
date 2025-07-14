@@ -1,127 +1,55 @@
-import logging
-from telegram import Update
-from telegram.constants import ParseMode
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    ContextTypes,
-)
-from telegram.ext import MessageHandler, filters
-
-logger = logging.getLogger(__name__)
-
-from helpers import (
-    get_or_create_user,
-    is_admin,
-    approve_user,
-)
-from config import Config
+from pyrogram import Client, filters
+from pyrogram.types import Message
+from helpers.decorators import require_admin
+from helpers.mongo import get_db
+from helpers.abuse import add_word, remove_word
 
 
-def register(app: Application):
-    async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if update.effective_user.id != Config.OWNER_ID:
-            await update.message.reply_text(
-                "❌ You are not authorized to broadcast messages.",
-                quote=True,
-            )
+def register(app: Client):
+    db = get_db()
+
+    @app.on_message(filters.command("set_text_timer") & filters.group)
+    @require_admin
+    async def set_text(client: Client, message: Message):
+        if len(message.command) < 2 or not message.command[1].isdigit():
+            await message.reply_text("Usage: /set_text_timer <seconds>")
             return
-        if not context.args:
-            await update.message.reply_text("⚠️ Usage:\n`/broadcast <message>`", quote=True)
+        seconds = int(message.command[1])
+        await db.group_settings.update_one(
+            {"chat_id": message.chat.id},
+            {"$set": {"text_timer": seconds}},
+            upsert=True,
+        )
+        await message.reply_text(f"Text messages will be deleted after {seconds}s")
+
+    @app.on_message(filters.command("set_media_timer") & filters.group)
+    @require_admin
+    async def set_media(client: Client, message: Message):
+        if len(message.command) < 2 or not message.command[1].isdigit():
+            await message.reply_text("Usage: /set_media_timer <seconds>")
             return
+        seconds = int(message.command[1])
+        await db.group_settings.update_one(
+            {"chat_id": message.chat.id},
+            {"$set": {"media_timer": seconds}},
+            upsert=True,
+        )
+        await message.reply_text(f"Media will be deleted after {seconds}s")
 
-        text = " ".join(context.args)
-        await update.message.reply_text("📢 Broadcasting your message...")
-        sent = 0
-        async with app.db.execute("SELECT id FROM users") as cur:
-            rows = await cur.fetchall()
-        for row in rows:
-            try:
-                await context.bot.send_message(row[0], text)
-                sent += 1
-            except Exception:
-                continue
-
-        await update.message.reply_text(f"✅ Broadcast sent to `{sent}` chats.")
-
-    async def approve_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        message = update.effective_message
-        if not await is_admin(message):
-            await message.reply_text(
-                "❌ You must be an admin to use this command.",
-                quote=True,
-            )
+    @app.on_message(filters.command("addabuse") & filters.group)
+    @require_admin
+    async def add_abuse(client: Client, message: Message):
+        if len(message.command) < 2:
+            await message.reply_text("Usage: /addabuse <word>")
             return
-        if not message.reply_to_message:
-            await message.reply_text("👤 Please reply to a user to approve them.")
+        await add_word(message.command[1])
+        await message.reply_text("Word added.")
+
+    @app.on_message(filters.command("removeabuse") & filters.group)
+    @require_admin
+    async def remove_abuse(client: Client, message: Message):
+        if len(message.command) < 2:
+            await message.reply_text("Usage: /removeabuse <word>")
             return
-
-        user_id = message.reply_to_message.from_user.id
-        await approve_user(app.db, user_id, True)
-        await message.reply_text(f"✅ Approved [user](tg://user?id={user_id}).", disable_web_page_preview=True)
-        logger.info("Approved user %s via %s", user_id, message.from_user.id)
-
-    async def unapprove_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        message = update.effective_message
-        if not await is_admin(message):
-            await message.reply_text(
-                "❌ You must be an admin to use this command.",
-                quote=True,
-            )
-            return
-        if not message.reply_to_message:
-            await message.reply_text("👤 Please reply to a user to unapprove them.")
-            return
-
-        user_id = message.reply_to_message.from_user.id
-        await approve_user(app.db, user_id, False)
-        await message.reply_text(f"❌ Unapproved [user](tg://user?id={user_id}).", disable_web_page_preview=True)
-        logger.info("Unapproved user %s via %s", user_id, message.from_user.id)
-
-    async def approved_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        message = update.effective_message
-        if not await is_admin(message):
-            await message.reply_text(
-                "❌ You must be an admin to use this command.",
-                quote=True,
-            )
-            return
-
-        async with app.db.execute("SELECT id FROM users WHERE approved=1") as cur:
-            rows = await cur.fetchall()
-
-        if not rows:
-            await message.reply_text("ℹ️ No users have been approved yet.")
-            return
-
-        lines = [f"- [user](tg://user?id={row[0]})" for row in rows]
-        await message.reply_text("✅ **Approved Users:**\n" + "\n".join(lines), disable_web_page_preview=True)
-        logger.info("Listed approved users for %s", message.from_user.id)
-
-    async def rmwarn_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        message = update.effective_message
-        if not await is_admin(message):
-            await message.reply_text(
-                "❌ You must be an admin to use this command.",
-                quote=True,
-            )
-            return
-        if not message.reply_to_message:
-            await message.reply_text("👤 Please reply to the user whose warnings you want to clear.")
-            return
-
-        user_id = message.reply_to_message.from_user.id
-        await get_or_create_user(app.db, user_id)
-        await app.db.execute("UPDATE users SET warnings=0 WHERE id=?", (user_id,))
-        await app.db.commit()
-        await message.reply_text(f"✅ Cleared all warnings for [user](tg://user?id={user_id}).", disable_web_page_preview=True)
-        logger.info("Cleared warnings for %s via %s", user_id, message.from_user.id)
-
-    app.add_handler(CommandHandler("broadcast", broadcast_handler))
-    app.add_handler(CommandHandler("approve", approve_handler))
-    app.add_handler(CommandHandler("unapprove", unapprove_handler))
-    app.add_handler(CommandHandler("approved", approved_list))
-    app.add_handler(CommandHandler("rmwarn", rmwarn_handler))
-
-    logger.info("✅ Admin handlers registered.")
-
+        await remove_word(message.command[1])
+        await message.reply_text("Word removed.")
