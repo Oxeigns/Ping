@@ -21,7 +21,9 @@ def register(app: Client):
         else:
             await send_message_safe(message, "**Control Panel**", reply_markup=main_panel())
 
-    @app.on_message(filters.command(["start", "menu", "help"]))
+    @app.on_message(
+        filters.command(["start", "menu", "help"]) & (filters.group | filters.private)
+    )
     async def start(_, message: Message):
         await send_panel(message)
 
@@ -59,6 +61,6 @@ def register(app: Client):
 
         await query.answer()
 
-    @app.on_message(filters.command("ping"))
+    @app.on_message(filters.command("ping") & (filters.group | filters.private))
     async def ping(_, message: Message):
         await message.reply_text("pong")
