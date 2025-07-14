@@ -33,7 +33,7 @@ def register(app: Application):
                 [InlineKeyboardButton("🛠️ Configure Group", callback_data="settings")],
                 [InlineKeyboardButton("📢 Broadcast", callback_data="bc")],
                 [InlineKeyboardButton("📘 Help", callback_data="help")],
-                [InlineKeyboardButton("👨‍💻 Developer", url=app.config.DEV_URL)],
+                [InlineKeyboardButton("👨‍💻 Developer", callback_data="dev")],
             ]
         )
 
@@ -155,6 +155,14 @@ def register(app: Application):
         )
 
     @catch_errors
+    async def cb_dev(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        query = update.callback_query
+        await query.answer(
+            text=f"👨‍💻 Developer: {app.config.DEV_NAME}\nContact: {app.config.DEV_URL}",
+            show_alert=True,
+        )
+
+    @catch_errors
     async def cb_back_home(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
@@ -219,6 +227,7 @@ def register(app: Application):
     app.add_handler(CallbackQueryHandler(cb_help, pattern="^help$"))
     app.add_handler(CallbackQueryHandler(cb_settings, pattern="^settings$"))
     app.add_handler(CallbackQueryHandler(cb_broadcast, pattern="^bc$"))
+    app.add_handler(CallbackQueryHandler(cb_dev, pattern="^dev$"))
     app.add_handler(CallbackQueryHandler(cb_back_home, pattern="^back_home$"))
     app.add_handler(ChatMemberHandler(track_my_member, ChatMemberHandler.MY_CHAT_MEMBER))
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE & filters.COMMAND, unknown), group=999)
