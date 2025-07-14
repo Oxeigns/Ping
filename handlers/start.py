@@ -28,60 +28,36 @@ def register(app: Client):
     async def start(_, message: Message):
         await send_panel(message)
 
-    @app.on_callback_query()
-    async def panel_callbacks(_, query: CallbackQuery):
+    @app.on_callback_query(filters.regex("^panel:"))
+    async def handle_panel_buttons(client: Client, query: CallbackQuery):
         data = query.data
+
         if data == "panel:text_timer":
-            await query.answer()
             await query.message.edit_text(
-                "🗑 **Text Timer Setup**\n"
-                "Set how long text messages stay before deletion.\n\n"
-                "Usage:\n`/set_text_timer <seconds>`",
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("◀️ Back", callback_data="panel:main")]]
-                ),
-                parse_mode="markdown",
-            )
-        elif data == "panel:media_timer":
-            await query.answer()
-            await query.message.edit_text(
-                "📷 **Media Timer Setup**\n"
-                "Control when photos and other media are removed.\n\n"
-                "Usage:\n`/set_media_timer <seconds>`",
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("◀️ Back", callback_data="panel:main")]]
-                ),
-                parse_mode="markdown",
-            )
-        elif data == "panel:broadcast":
-            await query.answer()
-            await query.message.edit_text(
-                "📢 **Broadcast Messages**\n"
-                "Send a message to all added chats.\n\n"
-                "Usage:\n`/broadcast <message>`",
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("◀️ Back", callback_data="panel:main")]]
-                ),
-                parse_mode="markdown",
-            )
-        elif data == "panel:abuse_filter":
-            await query.answer()
-            await query.message.edit_text(
-                "🛡 **Abuse Filter**\n"
-                "Manage abusive words that trigger deletion.\n\n"
-                "Add word: `/addabuse <word>`\n"
-                "Remove word: `/removeabuse <word>`",
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("◀️ Back", callback_data="panel:main")]]
-                ),
-                parse_mode="markdown",
-            )
-        elif data == "panel:main":
-            await query.answer()
-            await query.message.edit_text(
-                "**Control Panel**",
+                "🗑 *Text Timer*\nSet how long text messages stay before deletion.\n\nUse:\n`/set_text_timer <seconds>`\nExample:\n`/set_text_timer 60`",
                 reply_markup=main_panel(),
-                parse_mode="markdown",
+                parse_mode="Markdown",
             )
-        else:
-            await query.answer("Unknown option", show_alert=False)
+
+        elif data == "panel:media_timer":
+            await query.message.edit_text(
+                "📷 *Media Timer*\nSet how long media files (photos/videos/docs) stay before deletion.\n\nUse:\n`/set_media_timer <seconds>`\nExample:\n`/set_media_timer 120`",
+                reply_markup=main_panel(),
+                parse_mode="Markdown",
+            )
+
+        elif data == "panel:broadcast":
+            await query.message.edit_text(
+                "📢 *Broadcast Command*\nSend a message to all groups.\n\nUse:\n`/broadcast <your message>`\nExample:\n`/broadcast Hello everyone!`",
+                reply_markup=main_panel(),
+                parse_mode="Markdown",
+            )
+
+        elif data == "panel:abuse_filter":
+            await query.message.edit_text(
+                "🛡 *Abuse Filter System*\nDelete abusive messages automatically.\n\nCommands:\n• `/addabuse <word>` — Block word\n• `/removeabuse <word>` — Unblock word",
+                reply_markup=main_panel(),
+                parse_mode="Markdown",
+            )
+
+        await query.answer()
