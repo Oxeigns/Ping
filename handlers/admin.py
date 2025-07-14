@@ -12,7 +12,10 @@ def register(app: Client):
     @require_admin
     async def set_text(client: Client, message: Message):
         if len(message.command) < 2 or not message.command[1].isdigit():
-            await message.reply_text("Usage: /set_text_timer <seconds>")
+            await message.reply_text(
+                "❌ Usage: /set_text_timer <seconds>",
+                quote=True,
+            )
             return
         seconds = int(message.command[1])
         await db.group_settings.update_one(
@@ -20,13 +23,19 @@ def register(app: Client):
             {"$set": {"text_timer": seconds}},
             upsert=True,
         )
-        await message.reply_text(f"Text messages will be deleted after {seconds}s")
+        await message.reply_text(
+            f"✅ Text messages will be deleted after {seconds}s",
+            quote=True,
+        )
 
     @app.on_message(filters.command("set_media_timer") & filters.group)
     @require_admin
     async def set_media(client: Client, message: Message):
         if len(message.command) < 2 or not message.command[1].isdigit():
-            await message.reply_text("Usage: /set_media_timer <seconds>")
+            await message.reply_text(
+                "❌ Usage: /set_media_timer <seconds>",
+                quote=True,
+            )
             return
         seconds = int(message.command[1])
         await db.group_settings.update_one(
@@ -34,22 +43,31 @@ def register(app: Client):
             {"$set": {"media_timer": seconds}},
             upsert=True,
         )
-        await message.reply_text(f"Media will be deleted after {seconds}s")
+        await message.reply_text(
+            f"✅ Media will be deleted after {seconds}s",
+            quote=True,
+        )
 
     @app.on_message(filters.command("addabuse") & filters.group)
     @require_admin
     async def add_abuse(client: Client, message: Message):
         if len(message.command) < 2:
-            await message.reply_text("Usage: /addabuse <word>")
+            await message.reply_text(
+                "❌ Usage: /addabuse <word>",
+                quote=True,
+            )
             return
         await add_word(message.command[1])
-        await message.reply_text("Word added.")
+        await message.reply_text("✅ Word added.", quote=True)
 
     @app.on_message(filters.command("removeabuse") & filters.group)
     @require_admin
     async def remove_abuse(client: Client, message: Message):
         if len(message.command) < 2:
-            await message.reply_text("Usage: /removeabuse <word>")
+            await message.reply_text(
+                "❌ Usage: /removeabuse <word>",
+                quote=True,
+            )
             return
         await remove_word(message.command[1])
-        await message.reply_text("Word removed.")
+        await message.reply_text("✅ Word removed.", quote=True)

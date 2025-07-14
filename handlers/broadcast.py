@@ -10,7 +10,10 @@ def register(app: Client):
     @app.on_message(filters.command("broadcast") & filters.user(Config.OWNER_ID))
     async def broadcast(client: Client, message: Message):
         if len(message.command) < 2:
-            await message.reply_text("Usage: /broadcast <text>")
+            await message.reply_text(
+                "❌ Usage: /broadcast <text>",
+                quote=True,
+            )
             return
         text = message.text.split(None, 1)[1]
         sent = 0
@@ -20,4 +23,14 @@ def register(app: Client):
                 sent += 1
             except Exception:
                 continue
-        await message.reply_text(f"Broadcast sent to {sent} chats")
+        await message.reply_text(
+            f"✅ Broadcast sent to {sent} chats",
+            quote=True,
+        )
+
+    @app.on_message(filters.command("broadcast") & ~filters.user(Config.OWNER_ID))
+    async def no_broadcast(_: Client, message: Message):
+        await message.reply_text(
+            "❌ Only the bot owner can broadcast messages.",
+            quote=True,
+        )
