@@ -28,6 +28,7 @@ Modern moderation bot built with **Pyrogram** and **MongoDB**.
 2. Copy `.env.example` to `.env` and fill the values.
 3. Install requirements with `pip install -r requirements.txt`.
 4. Run with `python run.py`.
+5. In BotFather, open `/mybots` -> **Bot Settings** -> **Group Privacy** and **Turn Off** so the bot can see messages in groups.
 
 ### VPS (systemd)
 Place `pingbot.service` in `/etc/systemd/system/`, adjust paths, then:
