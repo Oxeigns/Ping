@@ -27,7 +27,7 @@ Modern moderation bot built with **Pyrogram** and **MongoDB**.
 1. Install **Python 3.11** and create a virtual environment (optional).
 2. Copy `.env.example` to `.env` and fill the values.
 3. Install requirements with `pip install -r requirements.txt`.
-4. Run with `python -m run`.
+4. Run with `python run.py`.
 
 ### VPS (systemd)
 Place `pingbot.service` in `/etc/systemd/system/`, adjust paths, then:
