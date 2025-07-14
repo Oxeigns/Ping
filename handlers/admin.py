@@ -8,7 +8,9 @@ from helpers.abuse import add_word, remove_word
 def register(app: Client):
     db = get_db()
 
-    @app.on_message(filters.command("set_text_timer") & filters.group)
+    @app.on_message(
+        filters.command("set_text_timer") & (filters.group | filters.private)
+    )
     @require_admin
     async def set_text(client: Client, message: Message):
         if len(message.command) < 2 or not message.command[1].isdigit():
@@ -28,7 +30,9 @@ def register(app: Client):
             quote=True,
         )
 
-    @app.on_message(filters.command("set_media_timer") & filters.group)
+    @app.on_message(
+        filters.command("set_media_timer") & (filters.group | filters.private)
+    )
     @require_admin
     async def set_media(client: Client, message: Message):
         if len(message.command) < 2 or not message.command[1].isdigit():
@@ -48,7 +52,7 @@ def register(app: Client):
             quote=True,
         )
 
-    @app.on_message(filters.command("addabuse") & filters.group)
+    @app.on_message(filters.command("addabuse") & (filters.group | filters.private))
     @require_admin
     async def add_abuse(client: Client, message: Message):
         if len(message.command) < 2:
@@ -60,7 +64,7 @@ def register(app: Client):
         await add_word(message.command[1])
         await message.reply_text("✅ Word added.", quote=True)
 
-    @app.on_message(filters.command("removeabuse") & filters.group)
+    @app.on_message(filters.command("removeabuse") & (filters.group | filters.private))
     @require_admin
     async def remove_abuse(client: Client, message: Message):
         if len(message.command) < 2:

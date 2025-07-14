@@ -1,22 +1,37 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
+PANEL_PREFIX = "panel:"
+
+
 def main_panel() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🗑 Text Timer", callback_data="text_timer")],
-            [InlineKeyboardButton("📷 Media Timer", callback_data="media_timer")],
-            [InlineKeyboardButton("📢 Broadcast", callback_data="broadcast_panel")],
-            [InlineKeyboardButton("🛡 Abuse Filter", callback_data="abuse_panel")],
+            [
+                InlineKeyboardButton(
+                    "🗑 Text Timer", callback_data=f"{PANEL_PREFIX}text_timer"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "📷 Media Timer", callback_data=f"{PANEL_PREFIX}media_timer"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "📢 Broadcast", callback_data=f"{PANEL_PREFIX}broadcast"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "🛡 Abuse Filter", callback_data=f"{PANEL_PREFIX}abuse_filter"
+                )
+            ],
             [
                 InlineKeyboardButton(
                     "🧑‍💻 Developer Info", url="https://t.me/samratyash32169"
                 )
             ],
-            [
-                InlineKeyboardButton(
-                    "💬 Support", url="https://t.me/+Sn1PMhrr_nIwM2Y1"
-                )
-            ],
+            [InlineKeyboardButton("💬 Support", url="https://t.me/+Sn1PMhrr_nIwM2Y1")],
         ]
     )

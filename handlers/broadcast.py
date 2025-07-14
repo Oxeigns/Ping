@@ -8,7 +8,9 @@ def register(app: Client):
     db = get_db()
 
     @app.on_message(
-        filters.command("broadcast") & filters.group & filters.user(Config.OWNER_ID)
+        filters.command("broadcast")
+        & (filters.group | filters.private)
+        & filters.user(Config.OWNER_ID)
     )
     async def broadcast(client: Client, message: Message):
         if len(message.command) < 2:
@@ -31,7 +33,9 @@ def register(app: Client):
         )
 
     @app.on_message(
-        filters.command("broadcast") & filters.group & ~filters.user(Config.OWNER_ID)
+        filters.command("broadcast")
+        & (filters.group | filters.private)
+        & ~filters.user(Config.OWNER_ID)
     )
     async def no_broadcast(_: Client, message: Message):
         await message.reply_text(

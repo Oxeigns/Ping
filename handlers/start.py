@@ -31,40 +31,40 @@ def register(app: Client):
     @app.on_callback_query()
     async def panel_callbacks(_, query: CallbackQuery):
         data = query.data
-        if data == "text_timer":
+        if data == "panel:text_timer":
             await query.answer()
             await query.message.edit_text(
                 "🗑 **Text Timer Setup**\n"
                 "Set how long text messages stay before deletion.\n\n"
                 "Usage:\n`/set_text_timer <seconds>`",
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("◀️ Back", callback_data="main_panel")]]
+                    [[InlineKeyboardButton("◀️ Back", callback_data="panel:main")]]
                 ),
                 parse_mode="markdown",
             )
-        elif data == "media_timer":
+        elif data == "panel:media_timer":
             await query.answer()
             await query.message.edit_text(
                 "📷 **Media Timer Setup**\n"
                 "Control when photos and other media are removed.\n\n"
                 "Usage:\n`/set_media_timer <seconds>`",
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("◀️ Back", callback_data="main_panel")]]
+                    [[InlineKeyboardButton("◀️ Back", callback_data="panel:main")]]
                 ),
                 parse_mode="markdown",
             )
-        elif data == "broadcast_panel":
+        elif data == "panel:broadcast":
             await query.answer()
             await query.message.edit_text(
                 "📢 **Broadcast Messages**\n"
                 "Send a message to all added chats.\n\n"
                 "Usage:\n`/broadcast <message>`",
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("◀️ Back", callback_data="main_panel")]]
+                    [[InlineKeyboardButton("◀️ Back", callback_data="panel:main")]]
                 ),
                 parse_mode="markdown",
             )
-        elif data == "abuse_panel":
+        elif data == "panel:abuse_filter":
             await query.answer()
             await query.message.edit_text(
                 "🛡 **Abuse Filter**\n"
@@ -72,11 +72,11 @@ def register(app: Client):
                 "Add word: `/addabuse <word>`\n"
                 "Remove word: `/removeabuse <word>`",
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("◀️ Back", callback_data="main_panel")]]
+                    [[InlineKeyboardButton("◀️ Back", callback_data="panel:main")]]
                 ),
                 parse_mode="markdown",
             )
-        elif data == "main_panel":
+        elif data == "panel:main":
             await query.answer()
             await query.message.edit_text(
                 "**Control Panel**",
@@ -84,4 +84,4 @@ def register(app: Client):
                 parse_mode="markdown",
             )
         else:
-            await query.answer()
+            await query.answer("Unknown option", show_alert=False)
