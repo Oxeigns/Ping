@@ -1,15 +1,10 @@
-import logging
-
-logger = logging.getLogger(__name__)
+from pyrogram import Client
 
 
-def register_all(app):
-    """Import and register all handler modules."""
-    from . import start, admin, debug, moderation
+def register_all(app: Client):
+    from . import start, admin, autodelete, broadcast
 
     start.register(app)
     admin.register(app)
-    debug.register(app)
-    moderation.register(app)
-
-    logger.info("🎉 All handler modules registered successfully.")
+    autodelete.register(app)
+    broadcast.register(app)

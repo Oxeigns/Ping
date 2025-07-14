@@ -1,15 +1,13 @@
 # Telegram Moderation Bot
 
-A modular Telegram bot built with **Pyrogram** for basic group moderation.
+Modern moderation bot built with **Pyrogram** and **MongoDB**.
 
 ## Features
-- Manual text filtering using a configurable `banned_words.txt` file
-- Warn and mute users when banned words are used
-- Admin approval system and warning management
-- Broadcast system for the owner
-- Works in private chats and groups
-- Deployment ready for VPS (systemd) and Render.com
-- Inline control panel with Markdown formatted messages
+- Automatic deletion of text and media after a configurable delay
+- Dynamic abuse word filtering backed by MongoDB
+- Simple admin commands for timers and abuse list management
+- Owner broadcast to all groups
+- Clean inline control panel
 
 ## Commands
 - `/start` `/menu` `/help` – show control panel
@@ -52,7 +50,7 @@ API_ID=12345
 API_HASH=your_api_hash
 OWNER_ID=1888832817
 LOG_CHANNEL_ID=-1001234567890
-DB_FILE=bot.db
+MONGO_URI=mongodb://localhost:27017/modbot
 PANEL_IMAGE=https://example.com/panel.png
 DEV_URL=https://t.me/Oxeign
 DEV_NAME=Oxeign
@@ -64,7 +62,7 @@ Edit `.env` with the following keys:
 - `API_ID` / `API_HASH` – Telegram API credentials
 - `OWNER_ID` – your Telegram user ID
 - `LOG_CHANNEL_ID` – channel/group ID for logs
-- `DB_FILE` – path to the SQLite DB file. By default the value of `DATABASE_URL` is used unless it looks like a Postgres connection string. This avoids issues with hosts like Render that automatically define `DATABASE_URL` for Postgres.
+- `MONGO_URI` – MongoDB connection string
 - `PANEL_IMAGE` – optional URL or file path to an image shown with the control panel.
 - `DEV_URL` – link shown in the Developer button
 - `DEV_NAME` – name used in the Developer alert
