@@ -1,3 +1,4 @@
+import logging
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from helpers.mongo import get_db
@@ -5,6 +6,7 @@ from config import Config
 
 
 def register(app: Client):
+    logger = logging.getLogger(__name__)
     db = get_db()
 
     @app.on_message(
@@ -13,22 +15,31 @@ def register(app: Client):
         & filters.user(Config.OWNER_ID)
     )
     async def broadcast(client: Client, message: Message):
-        if len(message.command) < 2:
+        if message.reply_to_message:
+            target = message.reply_to_message
+        elif len(message.command) > 1:
+            target = message
+        else:
             await message.reply_text(
-                "❌ Usage: /broadcast <text>",
+                "❌ Usage: reply or `/broadcast <text>`",
                 quote=True,
             )
             return
-        text = message.text.split(None, 1)[1]
+
         sent = 0
         async for chat in db.group_settings.find({}, {"chat_id": 1}):
+            chat_id = chat.get("chat_id")
             try:
-                await client.send_message(chat["chat_id"], text)
+                if target is message:
+                    await client.send_message(chat_id, message.text.split(None, 1)[1])
+                else:
+                    await target.copy(chat_id)
+                logger.info("[SENT] %s", chat_id)
                 sent += 1
-            except Exception:
-                continue
+            except Exception as e:
+                logger.warning("[FAILED] %s: %s", chat_id, e)
         await message.reply_text(
-            f"✅ Broadcast sent to {sent} chats",
+            f"✅ Broadcast complete to {sent} chats",
             quote=True,
         )
 

@@ -3,7 +3,7 @@
 from .mongo import connect, get_db
 from .perms import is_admin
 from .decorators import require_admin, catch_errors
-from .abuse import add_word, remove_word, contains_abuse, get_words
+from .abuse import add_word, remove_word, contains_abuse, init_words
 from .formatting import send_message_safe, safe_edit
 
 __all__ = [
@@ -15,7 +15,7 @@ __all__ = [
     "add_word",
     "remove_word",
     "contains_abuse",
-    "get_words",
+    "init_words",
     "send_message_safe",
     "safe_edit",
 ]

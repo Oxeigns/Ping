@@ -1,19 +1,59 @@
-from .mongo import get_db
+"""Manage abuse word list stored in ``banned_words.txt``."""
 
-async def add_word(word: str) -> None:
-    db = get_db()
-    await db.abuse_words.update_one({"word": word}, {"$set": {"word": word}}, upsert=True)
+from __future__ import annotations
 
-async def remove_word(word: str) -> None:
-    db = get_db()
-    await db.abuse_words.delete_one({"word": word})
+import re
+from pathlib import Path
+from typing import Set
 
-async def get_words() -> list[str]:
-    db = get_db()
-    cursor = db.abuse_words.find({}, {"_id": 0, "word": 1})
-    return [doc["word"] async for doc in cursor]
+BANNED_WORDS: Set[str] = set()
+_WORDS_FILE: Path | None = None
 
-async def contains_abuse(text: str) -> bool:
-    words = await get_words()
-    text = text.lower()
-    return any(w.lower() in text for w in words)
+
+def load_words(path: str = "banned_words.txt") -> Set[str]:
+    """Load words from ``path`` into a set."""
+    p = Path(path)
+    if not p.is_absolute():
+        p = Path(__file__).resolve().parent.parent / path
+    if not p.exists():
+        return set()
+    with p.open("r", encoding="utf-8") as f:
+        return {line.strip().lower() for line in f if line.strip()}
+
+
+def init_words(path: str = "banned_words.txt") -> None:
+    """Initialize the global word set from file."""
+    global BANNED_WORDS, _WORDS_FILE
+    _WORDS_FILE = Path(path)
+    if not _WORDS_FILE.is_absolute():
+        _WORDS_FILE = Path(__file__).resolve().parent.parent / path
+    BANNED_WORDS = load_words(_WORDS_FILE)
+
+
+def _write_words() -> None:
+    if _WORDS_FILE is None:
+        return
+    with _WORDS_FILE.open("w", encoding="utf-8") as f:
+        for w in sorted(BANNED_WORDS):
+            f.write(f"{w}\n")
+
+
+def add_word(word: str) -> None:
+    word = word.lower().strip()
+    if not word:
+        return
+    if word not in BANNED_WORDS:
+        BANNED_WORDS.add(word)
+        _write_words()
+
+
+def remove_word(word: str) -> None:
+    word = word.lower().strip()
+    if word in BANNED_WORDS:
+        BANNED_WORDS.remove(word)
+        _write_words()
+
+
+def contains_abuse(text: str) -> bool:
+    tokens = re.findall(r"\w+", text.lower())
+    return any(token in BANNED_WORDS for token in tokens)

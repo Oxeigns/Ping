@@ -3,6 +3,7 @@ from pyrogram.types import Message
 from helpers.decorators import require_admin
 from helpers.mongo import get_db
 from helpers.abuse import add_word, remove_word
+from config import Config
 
 
 def register(app: Client):
@@ -52,8 +53,11 @@ def register(app: Client):
             quote=True,
         )
 
-    @app.on_message(filters.command("addabuse") & (filters.group | filters.private))
-    @require_admin
+    @app.on_message(
+        filters.command("addabuse")
+        & (filters.group | filters.private)
+        & filters.user(Config.OWNER_ID)
+    )
     async def add_abuse(client: Client, message: Message):
         if len(message.command) < 2:
             await message.reply_text(
@@ -64,8 +68,11 @@ def register(app: Client):
         await add_word(message.command[1])
         await message.reply_text("✅ Word added.", quote=True)
 
-    @app.on_message(filters.command("removeabuse") & (filters.group | filters.private))
-    @require_admin
+    @app.on_message(
+        filters.command("removeabuse")
+        & (filters.group | filters.private)
+        & filters.user(Config.OWNER_ID)
+    )
     async def remove_abuse(client: Client, message: Message):
         if len(message.command) < 2:
             await message.reply_text(
