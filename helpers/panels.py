@@ -1,7 +1,7 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-PANEL_PREFIX = "panel:"
+PANEL_PREFIX = "panel:"  # Common prefix for callback data
 
 
 def main_panel() -> InlineKeyboardMarkup:
@@ -27,11 +27,7 @@ def main_panel() -> InlineKeyboardMarkup:
                     "🛡 Abuse Filter", callback_data=f"{PANEL_PREFIX}abuse_filter"
                 )
             ],
-            [
-                InlineKeyboardButton(
-                    "🧑‍💻 Developer Info", url="https://t.me/samratyash32169"
-                )
-            ],
+            [InlineKeyboardButton("👨‍💻 Developer Info", url="https://t.me/samratyash32169")],
             [InlineKeyboardButton("💬 Support", url="https://t.me/+Sn1PMhrr_nIwM2Y1")],
         ]
     )
