@@ -21,6 +21,10 @@ from config import Config
 def register(app: Application):
     async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if update.effective_user.id != Config.OWNER_ID:
+            await update.message.reply_text(
+                "❌ You are not authorized to broadcast messages.",
+                quote=True,
+            )
             return
         if not context.args:
             await update.message.reply_text("⚠️ Usage:\n`/broadcast <message>`", quote=True)
@@ -43,6 +47,10 @@ def register(app: Application):
     async def approve_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = update.effective_message
         if not await is_admin(message):
+            await message.reply_text(
+                "❌ You must be an admin to use this command.",
+                quote=True,
+            )
             return
         if not message.reply_to_message:
             await message.reply_text("👤 Please reply to a user to approve them.")
@@ -56,6 +64,10 @@ def register(app: Application):
     async def unapprove_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = update.effective_message
         if not await is_admin(message):
+            await message.reply_text(
+                "❌ You must be an admin to use this command.",
+                quote=True,
+            )
             return
         if not message.reply_to_message:
             await message.reply_text("👤 Please reply to a user to unapprove them.")
@@ -69,6 +81,10 @@ def register(app: Application):
     async def approved_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = update.effective_message
         if not await is_admin(message):
+            await message.reply_text(
+                "❌ You must be an admin to use this command.",
+                quote=True,
+            )
             return
 
         async with app.db.execute("SELECT id FROM users WHERE approved=1") as cur:
@@ -85,6 +101,10 @@ def register(app: Application):
     async def rmwarn_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = update.effective_message
         if not await is_admin(message):
+            await message.reply_text(
+                "❌ You must be an admin to use this command.",
+                quote=True,
+            )
             return
         if not message.reply_to_message:
             await message.reply_text("👤 Please reply to the user whose warnings you want to clear.")

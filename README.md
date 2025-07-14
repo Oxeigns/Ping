@@ -39,6 +39,12 @@ sudo systemctl start pingbot
 ### Render.com
 Create a new **Background Worker** pointing to this repository. Render uses `render.yaml` for configuration. Render defaults to the latest Python version which may be incompatible with pinned dependencies. This project targets **Python 3.11**, so the repository includes a `runtime.txt` and `.python-version` file to explicitly set the Python version during deployment.
 `render.yaml` installs packages using the `--only-binary=:all:` flag to ensure pre-built wheels.
+
+### MongoDB Setup
+This project uses SQLite by default for simplicity. If you prefer MongoDB,
+install `motor` and set `DATABASE_URL` to your Mongo connection string.
+Update the `database` module to use `motor.motor_asyncio.AsyncIOMotorClient`
+in place of `aiosqlite`.
 ### Example `.env`
 ```bash
 BOT_TOKEN=your_bot_token
@@ -48,6 +54,8 @@ OWNER_ID=1888832817
 LOG_CHANNEL_ID=-1001234567890
 DB_FILE=bot.db
 PANEL_IMAGE=https://example.com/panel.png
+DEV_URL=https://t.me/Oxeign
+DEV_NAME=Oxeign
 ```
 ### Environment Variables
 Edit `.env` with the following keys:
@@ -58,6 +66,8 @@ Edit `.env` with the following keys:
 - `LOG_CHANNEL_ID` – channel/group ID for logs
 - `DB_FILE` – path to the SQLite DB file. By default the value of `DATABASE_URL` is used unless it looks like a Postgres connection string. This avoids issues with hosts like Render that automatically define `DATABASE_URL` for Postgres.
 - `PANEL_IMAGE` – optional URL or file path to an image shown with the control panel.
+- `DEV_URL` – link shown in the Developer button
+- `DEV_NAME` – name used in the Developer alert
 - `DEBUG_UPDATES` – set to `1` to enable verbose logging of every incoming update. Useful when troubleshooting why the bot is not receiving commands.
 - `banned_words.txt` – list of words or phrases to filter, one per line.
 
