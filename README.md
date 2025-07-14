@@ -8,6 +8,9 @@ Modern moderation bot built with **Pyrogram** and **MongoDB**.
 - Simple admin commands for timers and abuse list management
 - Owner broadcast to all groups
 - Clean inline control panel
+- Async functions with a global Mongo connection
+- Modern Python best practices with full type hints
+- Ready for Railway, Render, Heroku, or VPS deployment
 
 ## Commands
 - `/start` `/menu` `/help` – show control panel
