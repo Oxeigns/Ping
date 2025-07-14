@@ -1,6 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from helpers.decorators import require_admin
+from helpers.decorators import require_admin, require_owner
 from helpers.mongo import get_db
 from helpers.abuse import add_word, remove_word
 from config import Config
@@ -82,3 +82,37 @@ def register(app: Client):
             return
         await remove_word(message.command[1])
         await message.reply_text("✅ Word removed.", quote=True)
+
+    @app.on_message(filters.command("whitelist") & filters.group)
+    @require_owner
+    async def whitelist_word(client: Client, message: Message):
+        if len(message.command) < 2:
+            await message.reply_text(
+                "❌ Usage: /whitelist <word>",
+                quote=True,
+            )
+            return
+        word = message.command[1].lower()
+        await db.group_settings.update_one(
+            {"chat_id": message.chat.id},
+            {"$addToSet": {"whitelist": word}, "$setOnInsert": {"chat_id": message.chat.id}},
+            upsert=True,
+        )
+        await message.reply_text("✅ Word whitelisted in this group.", quote=True)
+
+    @app.on_message(filters.command("removewhitelist") & filters.group)
+    @require_owner
+    async def remove_whitelist_word(client: Client, message: Message):
+        if len(message.command) < 2:
+            await message.reply_text(
+                "❌ Usage: /removewhitelist <word>",
+                quote=True,
+            )
+            return
+        word = message.command[1].lower()
+        await db.group_settings.update_one(
+            {"chat_id": message.chat.id},
+            {"$pull": {"whitelist": word}},
+            upsert=True,
+        )
+        await message.reply_text("✅ Word removed from whitelist.", quote=True)

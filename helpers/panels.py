@@ -27,6 +27,11 @@ def main_panel() -> InlineKeyboardMarkup:
                     "🛡 Abuse Filter", callback_data=f"{PANEL_PREFIX}abuse_filter"
                 )
             ],
+            [
+                InlineKeyboardButton(
+                    "⚪ Whitelist Word", callback_data=f"{PANEL_PREFIX}whitelist_word"
+                )
+            ],
             [InlineKeyboardButton("👨‍💻 Developer Info", url="https://t.me/samratyash32169")],
             [InlineKeyboardButton("💬 Support", url="https://t.me/+Sn1PMhrr_nIwM2Y1")],
         ]
