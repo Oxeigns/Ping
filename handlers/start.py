@@ -36,28 +36,28 @@ def register(app: Client):
             await query.message.edit_text(
                 "🗑 *Text Timer*\nSet how long text messages stay before deletion.\n\nUse:\n`/set_text_timer <seconds>`\nExample:\n`/set_text_timer 60`",
                 reply_markup=main_panel(),
-                parse_mode="Markdown",
+                parse_mode="markdown",
             )
 
         elif data == "panel:media_timer":
             await query.message.edit_text(
                 "📷 *Media Timer*\nSet how long media files (photos/videos/docs) stay before deletion.\n\nUse:\n`/set_media_timer <seconds>`\nExample:\n`/set_media_timer 120`",
                 reply_markup=main_panel(),
-                parse_mode="Markdown",
+                parse_mode="markdown",
             )
 
         elif data == "panel:broadcast":
             await query.message.edit_text(
                 "📢 *Broadcast Command*\nSend a message to all groups.\n\nUse:\n`/broadcast <your message>`\nExample:\n`/broadcast Hello everyone!`",
                 reply_markup=main_panel(),
-                parse_mode="Markdown",
+                parse_mode="markdown",
             )
 
         elif data == "panel:abuse_filter":
             await query.message.edit_text(
                 "🛡 *Abuse Filter System*\nDelete abusive messages automatically.\n\nCommands:\n• `/addabuse <word>` — Block word\n• `/removeabuse <word>` — Unblock word",
                 reply_markup=main_panel(),
-                parse_mode="Markdown",
+                parse_mode="markdown",
             )
 
         await query.answer()
