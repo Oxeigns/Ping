@@ -1,26 +1,16 @@
 import logging
+import asyncio
 import re
-from pathlib import Path
-from typing import Set
-
 from pyrogram import Client, filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 from pyrogram.enums import ChatMemberStatus
+from googletrans import Translator
+from helpers.abuse import contains_abuse, init_words
 
 logger = logging.getLogger(__name__)
 
-BANNED_WORDS: Set[str] = set()
-
-
-def load_banned_words(path: str = "banned_words.txt") -> Set[str]:
-    p = Path(__file__).resolve().parent.parent / path
-    try:
-        with p.open("r", encoding="utf-8") as f:
-            return {line.strip().lower() for line in f if line.strip()}
-    except FileNotFoundError:
-        logger.warning("banned words file not found: %s", p)
-        return set()
+translator = Translator()
 
 
 async def check_banned_words(client: Client, message: Message):
@@ -36,8 +26,20 @@ async def check_banned_words(client: Client, message: Message):
         return
 
     text = message.text or message.caption or ""
-    tokens = re.findall(r"\w+", text.lower())
-    if any(token in BANNED_WORDS for token in tokens):
+    if not text:
+        return
+
+    try:
+        loop = asyncio.get_running_loop()
+        translated = await loop.run_in_executor(
+            None, translator.translate, text, "en"
+        )
+        check_text = translated.text
+    except Exception as e:
+        logger.debug("translation failed: %s", e)
+        check_text = text
+
+    if contains_abuse(check_text):
         try:
             await message.delete()
             logger.info("Deleted message from %s: %s", message.from_user.id, text)
@@ -46,8 +48,7 @@ async def check_banned_words(client: Client, message: Message):
 
 
 def register(app: Client):
-    global BANNED_WORDS
-    BANNED_WORDS = load_banned_words()
-    handler = MessageHandler(check_banned_words, filters.text & filters.group)
+    init_words()
+    handler = MessageHandler(check_banned_words, filters.group)
     app.add_handler(handler)
     logger.info("✅ Moderation handler registered.")

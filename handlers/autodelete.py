@@ -3,7 +3,6 @@ import contextlib
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from helpers.mongo import get_db
-from helpers.abuse import contains_abuse
 
 
 def register(app: Client):
@@ -16,10 +15,12 @@ def register(app: Client):
 
     @app.on_message(filters.group)
     async def auto_delete(client: Client, message: Message):
+        await db.group_settings.update_one(
+            {"chat_id": message.chat.id},
+            {"$setOnInsert": {"chat_id": message.chat.id}},
+            upsert=True,
+        )
         settings = await db.group_settings.find_one({"chat_id": message.chat.id}) or {}
-        if message.text and await contains_abuse(message.text):
-            await message.delete()
-            return
         if message.media:
             delay = settings.get("media_timer")
         else:
