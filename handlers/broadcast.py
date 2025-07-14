@@ -7,7 +7,9 @@ from config import Config
 def register(app: Client):
     db = get_db()
 
-    @app.on_message(filters.command("broadcast") & filters.user(Config.OWNER_ID))
+    @app.on_message(
+        filters.command("broadcast") & filters.group & filters.user(Config.OWNER_ID)
+    )
     async def broadcast(client: Client, message: Message):
         if len(message.command) < 2:
             await message.reply_text(
@@ -28,7 +30,9 @@ def register(app: Client):
             quote=True,
         )
 
-    @app.on_message(filters.command("broadcast") & ~filters.user(Config.OWNER_ID))
+    @app.on_message(
+        filters.command("broadcast") & filters.group & ~filters.user(Config.OWNER_ID)
+    )
     async def no_broadcast(_: Client, message: Message):
         await message.reply_text(
             "❌ Only the bot owner can broadcast messages.",
