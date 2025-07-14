@@ -26,6 +26,27 @@ def require_admin(func):
     return wrapper
 
 
+def require_owner(func):
+    @functools.wraps(func)
+    async def wrapper(client, message: Message, *args, **kwargs):
+        from .perms import is_owner
+        from config import Config
+
+        if message.from_user and message.from_user.id == Config.OWNER_ID:
+            return await func(client, message, *args, **kwargs)
+
+        if not await is_owner(client, message):
+            await message.reply_text(
+                "❌ Only the group owner can use this command.",
+                quote=True,
+            )
+            return
+
+        return await func(client, message, *args, **kwargs)
+
+    return wrapper
+
+
 def catch_errors(func):
     @functools.wraps(func)
     async def wrapper(client, message, *args, **kwargs):

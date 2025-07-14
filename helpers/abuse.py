@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Set
+from typing import Set, Iterable
 
 BANNED_WORDS: Set[str] = set()
 _WORDS_FILE: Path | None = None
@@ -54,6 +54,12 @@ def remove_word(word: str) -> None:
         _write_words()
 
 
-def contains_abuse(text: str) -> bool:
+def contains_abuse(text: str, whitelist: Iterable[str] | None = None) -> bool:
+    """Return ``True`` if ``text`` contains a banned word not in ``whitelist``."""
     tokens = re.findall(r"\w+", text.lower())
-    return any(token in BANNED_WORDS for token in tokens)
+    if whitelist:
+        ignored = {w.lower() for w in whitelist}
+    else:
+        ignored = set()
+    banned = BANNED_WORDS - ignored
+    return any(token in banned for token in tokens)

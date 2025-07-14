@@ -7,6 +7,7 @@ from pyrogram.types import Message
 from pyrogram.enums import ChatMemberStatus
 from googletrans import Translator
 from helpers.abuse import contains_abuse, init_words
+from helpers.mongo import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +18,9 @@ async def check_banned_words(client: Client, message: Message):
     if not message.from_user or message.from_user.is_self:
         return
 
+    db = get_db()
     try:
         member = await client.get_chat_member(message.chat.id, message.from_user.id)
-        if member.status in {ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR}:
-            return
     except Exception as e:
         logger.debug("failed to fetch member status: %s", e)
         return
@@ -39,12 +39,23 @@ async def check_banned_words(client: Client, message: Message):
         logger.debug("translation failed: %s", e)
         check_text = text
 
-    if contains_abuse(check_text):
+    settings = await db.group_settings.find_one({"chat_id": message.chat.id}) or {}
+    whitelist = settings.get("whitelist", [])
+
+    if contains_abuse(check_text, whitelist):
         try:
             await message.delete()
             logger.info("Deleted message from %s: %s", message.from_user.id, text)
         except Exception as e:
             logger.warning("failed to delete message: %s", e)
+        if member.status in {ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}:
+            warn = f"⚠️ Admin {message.from_user.mention}, kindly avoid banned words."
+        else:
+            warn = f"⚠️ {message.from_user.mention}, please avoid using banned words."
+        try:
+            await client.send_message(message.chat.id, warn)
+        except Exception as e:
+            logger.debug("failed to send warn: %s", e)
 
 
 def register(app: Client):

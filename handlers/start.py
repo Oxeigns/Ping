@@ -55,7 +55,23 @@ def register(app: Client):
         elif data == "panel:abuse_filter":
             await safe_edit(
                 query.message,
-                "🛡 *Abuse Filter System*\nDelete abusive messages automatically.\n\nCommands:\n• `/addabuse <word>` — Block word\n• `/removeabuse <word>` — Unblock word",
+                "🛡 *Abuse Filter System*\n"
+                "Delete abusive messages automatically across languages. "
+                "Messages containing words from `banned_words.txt` are removed "
+                "and the sender is warned. Group owners can whitelist words.\n\n"
+                "Commands:\n"
+                "• `/addabuse <word>` — Block word globally\n"
+                "• `/removeabuse <word>` — Unblock word globally",
+                reply_markup=main_panel(),
+            )
+
+        elif data == "panel:whitelist_word":
+            await safe_edit(
+                query.message,
+                "⚪ *Whitelist System*\n\n"
+                "• `/whitelist <word>` – Allow a banned word in this group\n"
+                "• `/removewhitelist <word>` – Re-block that word\n"
+                "🔒 Only group *owner* can use these commands.",
                 reply_markup=main_panel(),
             )
 
