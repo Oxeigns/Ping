@@ -22,6 +22,7 @@ async def main():
     )
     app.db = db
     register_all(app)
+    logger.info("[READY] Command handlers active")
     await app.start()
     logger.info("[READY] Bot is now live ✅")
     await idle()
