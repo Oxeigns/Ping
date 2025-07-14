@@ -1,6 +1,6 @@
 pyrogram==2.0.106
 tgcrypto
-motor==3.3.1
+motor==3.7.1
 python-dotenv==1.0.0
 pillow==9.5.0  # Avoid 10.x for now
 googletrans==4.0.0-rc1
