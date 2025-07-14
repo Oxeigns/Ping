@@ -4,4 +4,4 @@ services:
     env: python
     plan: free
     buildCommand: pip install --no-cache-dir --only-binary=:all: -r requirements.txt
-    startCommand: python run.py
+    startCommand: "python run.py"
