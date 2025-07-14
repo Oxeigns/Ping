@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 WorkingDirectory=/opt/pingbot
-ExecStart=/usr/bin/python3 -m run
+ExecStart=/usr/bin/python3 run.py
 Restart=always
 EnvironmentFile=/opt/pingbot/.env
 
