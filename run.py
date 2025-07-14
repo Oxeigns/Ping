@@ -1,13 +1,19 @@
 import asyncio
-from pyrogram import Client
-from pyrogram import idle
+import logging
+from pyrogram import Client, idle
 from config import Config
 from helpers.mongo import connect
 from handlers import register_all
 
 
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
+
+
 async def main():
+    logger.info("[INFO] Connecting to MongoDB...")
     db = await connect(Config.MONGO_URI)
+    logger.info("[INFO] Initializing bot...")
     app = Client(
         "bot",
         api_id=Config.API_ID,
@@ -17,7 +23,7 @@ async def main():
     app.db = db
     register_all(app)
     await app.start()
-    print("Bot started")
+    logger.info("[READY] Bot is now live ✅")
     await idle()
     await app.stop()
 
