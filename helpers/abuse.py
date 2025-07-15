@@ -7,11 +7,19 @@ import os
 import re
 from pathlib import Path
 from typing import Iterable, Set
+import string
 
 logger = logging.getLogger(__name__)
 
 BANNED_WORDS: Set[str] = set()
 _WORDS_FILE: Path | None = None
+
+_PUNCT_TABLE = str.maketrans({p: " " for p in string.punctuation})
+
+
+def _normalize(text: str) -> str:
+    """Lowercase ``text`` and replace common punctuation with spaces."""
+    return text.lower().translate(_PUNCT_TABLE)
 
 
 def _resolve_path(path: str) -> Path:
@@ -27,11 +35,10 @@ def load_words(path: str = "banned_words.txt") -> Set[str]:
     """Load words from ``path`` into a set of clean lowercase strings."""
     p = _resolve_path(path)
     if not p.exists():
-        logger.warning("banned words file not found: %s", p)
-        return set()
+        raise FileNotFoundError(f"[ABUSE] banned_words.txt not found at {p}")
     with p.open("r", encoding="utf-8") as f:
         words = {line.strip().lower() for line in f if line.strip()}
-    logger.debug("loaded %d banned words from %s", len(words), p)
+    logger.debug("[ABUSE] Loaded %d banned words from %s", len(words), p)
     return words
 
 
@@ -40,7 +47,7 @@ def init_words(path: str = "banned_words.txt") -> None:
     global BANNED_WORDS, _WORDS_FILE
     _WORDS_FILE = _resolve_path(path)
     BANNED_WORDS = load_words(_WORDS_FILE)
-    logger.info("Loaded %d banned words from %s", len(BANNED_WORDS), _WORDS_FILE)
+    logger.info("[ABUSE] Initialized banned words (%d): %s", len(BANNED_WORDS), sorted(BANNED_WORDS))
 
 
 def _write_words() -> None:
@@ -67,37 +74,24 @@ def remove_word(word: str) -> None:
         _write_words()
 
 
-import string
-
-_PUNCT_TABLE = str.maketrans({p: " " for p in string.punctuation})
-
-
-def _normalize(text: str) -> str:
-    """Lowercase ``text`` and replace common punctuation with spaces."""
-    return text.lower().translate(_PUNCT_TABLE)
-
-
 def abuse_score(text: str, whitelist: Iterable[str] | None = None) -> int:
     """Return the number of banned words found in ``text``."""
     normalized = _normalize(text)
     tokens = normalized.split()
 
-    if whitelist:
-        ignored = {w.lower().strip() for w in whitelist}
-    else:
-        ignored = set()
-
+    ignored = {w.lower().strip() for w in whitelist} if whitelist else set()
     banned = BANNED_WORDS - ignored
     joined = " ".join(tokens)
 
     count = 0
     for word in banned:
-        w = word.lower()
-        if " " in w:
-            if w in joined:
+        if " " in word:
+            if word in joined:
+                logger.debug("[ABUSE] Matched phrase: %s", word)
                 count += 1
         else:
-            if w in tokens or f" {w} " in f" {joined} ":
+            if word in tokens:
+                logger.debug("[ABUSE] Matched word: %s", word)
                 count += 1
     return count
 
