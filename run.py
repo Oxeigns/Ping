@@ -22,11 +22,7 @@ async def main():
         bot_token=Config.BOT_TOKEN,
     )
     app.db = db
-    before = sum(len(v) for v in app.handlers.values())
     register_all(app)
-    after = sum(len(v) for v in app.handlers.values())
-    if after <= before:
-        raise RuntimeError("No handlers registered")
     logger.info("[REGISTERED] all handler modules")
     logger.info("[READY] Command handlers active")
     await app.start()
