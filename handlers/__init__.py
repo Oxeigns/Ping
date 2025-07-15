@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 def register_all(app: Client):
     """Import and register all Pyrogram handlers."""
-    from . import start, admin, autodelete, broadcast, moderation
+    from . import start, admin, autodelete, broadcast, groups, moderation
 
     start.register(app)
     logger.info("[REGISTERED] start.py ✅")
@@ -17,5 +17,7 @@ def register_all(app: Client):
     logger.info("[REGISTERED] autodelete.py ✅")
     broadcast.register(app)
     logger.info("[REGISTERED] broadcast.py ✅")
+    groups.register(app)
+    logger.info("[REGISTERED] groups.py ✅")
     moderation.register(app)
     logger.info("[REGISTERED] moderation.py ✅")
