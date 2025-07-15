@@ -54,11 +54,11 @@ def remove_word(word: str) -> None:
         _write_words()
 
 
-def contains_abuse(text: str, whitelist: Iterable[str] | None = None) -> bool:
-    """Return ``True`` if ``text`` contains a banned word not in ``whitelist``.
+def abuse_score(text: str, whitelist: Iterable[str] | None = None) -> int:
+    """Return the number of banned words found in ``text``.
 
-    Matching is case-insensitive and checks for substrings so multi-word
-    phrases are detected correctly.
+    The check is case-insensitive and counts each occurrence of a banned
+    word that is not whitelisted.
     """
     if whitelist:
         ignored = {w.lower().strip() for w in whitelist}
@@ -67,4 +67,9 @@ def contains_abuse(text: str, whitelist: Iterable[str] | None = None) -> bool:
 
     banned = BANNED_WORDS - ignored
     lower_text = text.lower()
-    return any(word in lower_text for word in banned)
+    return sum(lower_text.count(word) for word in banned)
+
+
+def contains_abuse(text: str, whitelist: Iterable[str] | None = None) -> bool:
+    """Return ``True`` if ``text`` contains a banned word not in ``whitelist``."""
+    return abuse_score(text, whitelist) > 0

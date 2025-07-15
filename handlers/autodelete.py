@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import logging
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from helpers.mongo import get_db
@@ -7,11 +8,14 @@ from helpers.mongo import get_db
 
 def register(app: Client):
     db = get_db()
+    logger = logging.getLogger(__name__)
 
     async def schedule_delete(message: Message, delay: int):
         await asyncio.sleep(delay)
-        with contextlib.suppress(Exception):
+        try:
             await message.delete()
+        except Exception as e:
+            logger.debug("auto delete failed: %s", e)
 
     @app.on_message(filters.group)
     async def auto_delete(client: Client, message: Message):

@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Set
+import re
 
 
 def load_banned_words(path: str = "banned_words.txt") -> Set[str]:
@@ -50,3 +51,10 @@ def contains_banned_word(text: str, banned_words: Set[str]) -> bool:
     """
     lower_text = text.lower()
     return any(word in lower_text for word in banned_words)
+
+
+def build_regex_from_words(words: Set[str]) -> re.Pattern:
+    """Create a regex that matches any of the given words safely."""
+    escaped = [re.escape(w) for w in words]
+    pattern = "|".join(escaped)
+    return re.compile(pattern, re.IGNORECASE)

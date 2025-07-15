@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+if os.getenv("ENV") == "production" and os.getenv("CONFIRM_DEPLOY") != "yes":
+    raise SystemExit("Deployment aborted: set CONFIRM_DEPLOY=yes to continue in production")
+
 REQUIRED_KEYS = [
     "BOT_TOKEN",
     "API_ID",

@@ -1,6 +1,7 @@
 import functools
 import logging
 from pyrogram.types import Message
+from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,6 @@ def catch_errors(func):
         try:
             return await func(client, message, *args, **kwargs)
         except Exception as e:
-            logger.exception("Handler error: %s", e)
-            await message.reply_text("❌ An unexpected error occurred.")
+            logger.exception("Handler %s failed", func.__name__, exc_info=e)
+            await message.reply_text(f"{Config.ERROR_EMOJI} An unexpected error occurred.")
     return wrapper
