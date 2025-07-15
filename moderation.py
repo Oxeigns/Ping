@@ -18,7 +18,7 @@ from helpers import (
     is_admin,
     is_approved,
 )
-from helpers.text_filter import load_banned_words, contains_banned_word
+from helpers.abuse import init_words, contains_abuse
 from googletrans import Translator
 
 logger = logging.getLogger(__name__)
@@ -26,8 +26,9 @@ logger = logging.getLogger(__name__)
 # Warning threshold before muting
 WARN_THRESHOLD = 3
 
-# Load banned words using helper
-BANNED_WORDS = load_banned_words()
+# Load banned words
+init_words()
+from helpers.abuse import BANNED_WORDS
 logger.info("Loaded %d banned words", len(BANNED_WORDS))
 translator = Translator()
 
@@ -90,21 +91,24 @@ def register(app: Application):
         if await is_approved(app.db, user_id):
             return
 
-        text = (message.text or message.caption or "").strip()
-        if text:
+        raw_text = (message.text or message.caption or "").strip()
+        if raw_text:
+            text = raw_text.lower()
             if message.text and message.text.startswith("/"):
                 cmd = message.text.split()[0][1:].split("@")[0].lower()
                 if cmd in SAFE_COMMANDS:
                     return
             loop = asyncio.get_running_loop()
             try:
-                translation = await loop.run_in_executor(None, translator.translate, text, "en")
-                scan_text = translation.text
+                translation = await loop.run_in_executor(None, translator.translate, raw_text, "en")
+                scan_text = translation.text.lower()
             except Exception as e:
                 logger.debug("translate failed: %s", e)
                 scan_text = text
 
-            if contains_banned_word(scan_text, BANNED_WORDS) or contains_banned_word(text, BANNED_WORDS):
+            abuse = contains_abuse(scan_text) or contains_abuse(text)
+            logger.debug("Checking '%s' (translated: '%s') -> %s", text, scan_text, abuse)
+            if abuse:
                 await process_violation(
                     context.application,
                     message,
