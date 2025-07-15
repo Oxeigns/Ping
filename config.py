@@ -14,3 +14,19 @@ class Config:
     PANEL_IMAGE = os.getenv("PANEL_IMAGE", "")
     DEV_URL = os.getenv("DEV_URL", "https://t.me/botsyard")
     DEV_NAME = os.getenv("DEV_NAME", "Developer")
+    SUCCESS_EMOJI = os.getenv("SUCCESS_EMOJI", "✅")
+    ERROR_EMOJI = os.getenv("ERROR_EMOJI", "❌")
+    WARNING_EMOJI = os.getenv("WARNING_EMOJI", "⚠️")
+    SUDO_USERS = {int(x) for x in os.getenv("SUDO_USERS", str(OWNER_ID)).split() if x}
+
+    @classmethod
+    def validate(cls) -> None:
+        required = {
+            "API_ID": cls.API_ID,
+            "API_HASH": cls.API_HASH,
+            "BOT_TOKEN": cls.BOT_TOKEN,
+            "OWNER_ID": cls.OWNER_ID,
+        }
+        missing = [k for k, v in required.items() if not v]
+        if missing:
+            raise RuntimeError(f"Missing required config values: {', '.join(missing)}")

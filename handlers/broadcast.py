@@ -1,6 +1,7 @@
 import logging
 from pyrogram import Client, filters
 from pyrogram.types import Message
+from pyrogram.errors import UserIsBlocked
 from helpers.mongo import get_db
 from config import Config
 
@@ -36,6 +37,8 @@ def register(app: Client):
                     await target.copy(chat_id)
                 logger.info("[SENT] %s", chat_id)
                 sent += 1
+            except UserIsBlocked:
+                logger.info("[BLOCKED] %s", chat_id)
             except Exception as e:
                 logger.warning("[FAILED] %s: %s", chat_id, e)
         await message.reply_text(
