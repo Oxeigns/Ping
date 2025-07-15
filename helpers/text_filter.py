@@ -19,7 +19,10 @@ def load_banned_words(path: str = "banned_words.txt") -> Set[str]:
     """
     p = Path(path)
     if not p.is_absolute():
-        p = Path(__file__).with_name(path)
+        # Resolve relative paths from the project root rather than this module's
+        # directory so ``banned_words.txt`` placed beside ``run.py`` is found
+        # regardless of the current working directory.
+        p = Path(__file__).resolve().parent.parent / path
 
     try:
         with p.open("r", encoding="utf-8") as f:
