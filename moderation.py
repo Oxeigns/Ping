@@ -28,6 +28,7 @@ WARN_THRESHOLD = 3
 
 # Load banned words using helper
 BANNED_WORDS = load_banned_words()
+logger.info("Loaded %d banned words", len(BANNED_WORDS))
 translator = Translator()
 
 SAFE_COMMANDS = [
@@ -89,7 +90,7 @@ def register(app: Application):
         if await is_approved(app.db, user_id):
             return
 
-        text = message.text or message.caption
+        text = (message.text or message.caption or "").strip()
         if text:
             if message.text and message.text.startswith("/"):
                 cmd = message.text.split()[0][1:].split("@")[0].lower()

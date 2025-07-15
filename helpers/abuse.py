@@ -2,20 +2,30 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
 from typing import Set, Iterable
+
+logger = logging.getLogger(__name__)
 
 BANNED_WORDS: Set[str] = set()
 _WORDS_FILE: Path | None = None
 
 
 def load_words(path: str = "banned_words.txt") -> Set[str]:
-    """Load words from ``path`` into a set."""
+    """Load words from ``path`` into a set.
+
+    Relative paths are resolved from the project root so the function works
+    regardless of the current working directory.
+    """
     p = Path(path)
     if not p.is_absolute():
-        p = Path(__file__).resolve().parent.parent / path
+        # ``helpers`` lives one level below the project root
+        root = Path(__file__).resolve().parents[1]
+        p = root / path
     if not p.exists():
+        logger.warning("banned words file not found: %s", p)
         return set()
     with p.open("r", encoding="utf-8") as f:
         return {line.strip().lower() for line in f if line.strip()}
@@ -28,6 +38,7 @@ def init_words(path: str = "banned_words.txt") -> None:
     if not _WORDS_FILE.is_absolute():
         _WORDS_FILE = Path(__file__).resolve().parent.parent / path
     BANNED_WORDS = load_words(_WORDS_FILE)
+    logger.info("loaded %d banned words from %s", len(BANNED_WORDS), _WORDS_FILE)
 
 
 def _write_words() -> None:
