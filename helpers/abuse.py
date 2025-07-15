@@ -55,11 +55,16 @@ def remove_word(word: str) -> None:
 
 
 def contains_abuse(text: str, whitelist: Iterable[str] | None = None) -> bool:
-    """Return ``True`` if ``text`` contains a banned word not in ``whitelist``."""
-    tokens = re.findall(r"\w+", text.lower())
+    """Return ``True`` if ``text`` contains a banned word not in ``whitelist``.
+
+    Matching is case-insensitive and checks for substrings so multi-word
+    phrases are detected correctly.
+    """
     if whitelist:
-        ignored = {w.lower() for w in whitelist}
+        ignored = {w.lower().strip() for w in whitelist}
     else:
         ignored = set()
+
     banned = BANNED_WORDS - ignored
-    return any(token in banned for token in tokens)
+    lower_text = text.lower()
+    return any(word in lower_text for word in banned)
