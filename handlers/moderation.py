@@ -8,7 +8,7 @@ from googletrans import Translator
 
 translator = Translator()
 from helpers.mongo import get_db
-from helpers.abuse import abuse_score, init_words
+from helpers.abuse import contains_abuse, abuse_score, init_words
 
 logger = logging.getLogger(__name__)
 
@@ -24,17 +24,18 @@ async def check_banned_words(client: Client, message: Message):
         logger.debug("❌ Failed to fetch member status: %s", e)
         return
 
-    text = (message.text or message.caption or "").strip()
-    if not text:
+    raw_text = (message.text or message.caption or "").strip()
+    if not raw_text:
         return
+    text = raw_text.lower()
 
     # Translate message to English
     try:
         loop = asyncio.get_running_loop()
         translated = await loop.run_in_executor(
-            None, lambda: translator.translate(text, dest="en")
+            None, lambda: translator.translate(raw_text, dest="en")
         )
-        check_text = translated.text
+        check_text = translated.text.lower()
     except Exception as e:
         logger.debug("❌ Translation failed: %s", e)
         check_text = text
@@ -44,15 +45,16 @@ async def check_banned_words(client: Client, message: Message):
     whitelist = settings.get("whitelist", [])
 
     threshold = settings.get("abuse_threshold", 1)
-    # Check both the translated text and the original message in case
-    # translation fails to preserve an abusive word.
+
     score = max(
         abuse_score(check_text, whitelist),
         abuse_score(text, whitelist),
     )
-    logger.debug("abuse score %s for text: %s", score, text)
-    if score >= threshold:
+    abuse = score >= threshold or contains_abuse(check_text, whitelist) or contains_abuse(text, whitelist)
+    logger.debug("Abuse check %s | score=%s | text='%s' | translated='%s'", abuse, score, text, check_text)
+    if abuse:
         if member.status not in {ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}:
+            logger.debug("Attempting to delete message from %s", message.from_user.id)
             try:
                 await message.delete()
                 logger.info("🗑 Deleted abusive message from %s: %s", message.from_user.id, text)
