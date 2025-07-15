@@ -1,11 +1,12 @@
-"""Manage abuse word list stored in ``banned_words.txt``."""
+"""Abusive word detection utilities for scanning messages."""
 
 from __future__ import annotations
 
 import logging
+import os
 import re
 from pathlib import Path
-from typing import Set, Iterable
+from typing import Iterable, Set
 
 logger = logging.getLogger(__name__)
 
@@ -13,32 +14,33 @@ BANNED_WORDS: Set[str] = set()
 _WORDS_FILE: Path | None = None
 
 
-def load_words(path: str = "banned_words.txt") -> Set[str]:
-    """Load words from ``path`` into a set.
-
-    Relative paths are resolved from the project root so the function works
-    regardless of the current working directory.
-    """
+def _resolve_path(path: str) -> Path:
+    """Return an absolute path for ``path`` relative to the project root."""
     p = Path(path)
     if not p.is_absolute():
-        # ``helpers`` lives one level below the project root
         root = Path(__file__).resolve().parents[1]
-        p = root / path
+        p = Path(os.path.join(root, path))
+    return p
+
+
+def load_words(path: str = "banned_words.txt") -> Set[str]:
+    """Load words from ``path`` into a set of clean lowercase strings."""
+    p = _resolve_path(path)
     if not p.exists():
         logger.warning("banned words file not found: %s", p)
         return set()
     with p.open("r", encoding="utf-8") as f:
-        return {line.strip().lower() for line in f if line.strip()}
+        words = {line.strip().lower() for line in f if line.strip()}
+    logger.debug("loaded %d banned words from %s", len(words), p)
+    return words
 
 
 def init_words(path: str = "banned_words.txt") -> None:
-    """Initialize the global word set from file."""
+    """Initialize the global :data:`BANNED_WORDS` set from ``path``."""
     global BANNED_WORDS, _WORDS_FILE
-    _WORDS_FILE = Path(path)
-    if not _WORDS_FILE.is_absolute():
-        _WORDS_FILE = Path(__file__).resolve().parent.parent / path
+    _WORDS_FILE = _resolve_path(path)
     BANNED_WORDS = load_words(_WORDS_FILE)
-    logger.info("loaded %d banned words from %s", len(BANNED_WORDS), _WORDS_FILE)
+    logger.info("Loaded %d banned words from %s", len(BANNED_WORDS), _WORDS_FILE)
 
 
 def _write_words() -> None:
@@ -65,20 +67,39 @@ def remove_word(word: str) -> None:
         _write_words()
 
 
-def abuse_score(text: str, whitelist: Iterable[str] | None = None) -> int:
-    """Return the number of banned words found in ``text``.
+import string
 
-    The check is case-insensitive and counts each occurrence of a banned
-    word that is not whitelisted.
-    """
+_PUNCT_TABLE = str.maketrans({p: " " for p in string.punctuation})
+
+
+def _normalize(text: str) -> str:
+    """Lowercase ``text`` and replace common punctuation with spaces."""
+    return text.lower().translate(_PUNCT_TABLE)
+
+
+def abuse_score(text: str, whitelist: Iterable[str] | None = None) -> int:
+    """Return the number of banned words found in ``text``."""
+    normalized = _normalize(text)
+    tokens = normalized.split()
+
     if whitelist:
         ignored = {w.lower().strip() for w in whitelist}
     else:
         ignored = set()
 
     banned = BANNED_WORDS - ignored
-    lower_text = text.lower()
-    return sum(lower_text.count(word) for word in banned)
+    joined = " ".join(tokens)
+
+    count = 0
+    for word in banned:
+        w = word.lower()
+        if " " in w:
+            if w in joined:
+                count += 1
+        else:
+            if w in tokens or f" {w} " in f" {joined} ":
+                count += 1
+    return count
 
 
 def contains_abuse(text: str, whitelist: Iterable[str] | None = None) -> bool:
