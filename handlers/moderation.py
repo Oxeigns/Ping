@@ -1,39 +1,17 @@
 import logging
 import asyncio
-import re
-from pathlib import Path
 from pyrogram import Client, filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 from pyrogram.enums import ChatMemberStatus
 from googletrans import Translator
 from helpers.mongo import get_db
+from helpers.abuse import contains_abuse, init_words
 
 logger = logging.getLogger(__name__)
 
 translator = Translator()
 
-# Load banned words from banned_words.txt
-BANNED_WORDS_FILE = Path("banned_words.txt")  # ensure correct path
-banned_words = []
-
-def load_banned_words():
-    global banned_words
-    if BANNED_WORDS_FILE.exists():
-        with open(BANNED_WORDS_FILE, "r", encoding="utf-8") as f:
-            banned_words = [line.strip().lower() for line in f if line.strip()]
-        logger.info(f"✅ Loaded {len(banned_words)} banned words from file.")
-    else:
-        logger.warning("⚠️ banned_words.txt file not found.")
-
-def contains_abuse(text: str, whitelist: list) -> bool:
-    cleaned_text = re.sub(r"[^\w\s]", "", text).lower()
-    for word in banned_words:
-        if word in whitelist:
-            continue
-        if re.search(rf"\b{re.escape(word)}\b", cleaned_text):
-            return True
-    return False
 
 async def check_banned_words(client: Client, message: Message):
     if not message.from_user or message.from_user.is_self:
@@ -82,8 +60,9 @@ async def check_banned_words(client: Client, message: Message):
         except Exception as e:
             logger.debug("❌ Failed to send warning: %s", e)
 
+
 def register(app: Client):
-    load_banned_words()
+    init_words()
     handler = MessageHandler(check_banned_words, filters.group)
     app.add_handler(handler)
     logger.info("✅ Abuse filter handler registered.")
