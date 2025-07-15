@@ -5,6 +5,8 @@ from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 from pyrogram.enums import ChatMemberStatus
 from googletrans import Translator
+
+translator = Translator()
 from helpers.mongo import get_db
 from helpers.abuse import abuse_score, init_words
 
@@ -22,7 +24,7 @@ async def check_banned_words(client: Client, message: Message):
         logger.debug("❌ Failed to fetch member status: %s", e)
         return
 
-    text = message.text or message.caption or ""
+    text = (message.text or message.caption or "").strip()
     if not text:
         return
 
@@ -30,7 +32,7 @@ async def check_banned_words(client: Client, message: Message):
     try:
         loop = asyncio.get_running_loop()
         translated = await loop.run_in_executor(
-            None, lambda: Translator().translate(text, dest="en")
+            None, lambda: translator.translate(text, dest="en")
         )
         check_text = translated.text
     except Exception as e:
@@ -42,7 +44,13 @@ async def check_banned_words(client: Client, message: Message):
     whitelist = settings.get("whitelist", [])
 
     threshold = settings.get("abuse_threshold", 1)
-    score = abuse_score(check_text, whitelist)
+    # Check both the translated text and the original message in case
+    # translation fails to preserve an abusive word.
+    score = max(
+        abuse_score(check_text, whitelist),
+        abuse_score(text, whitelist),
+    )
+    logger.debug("abuse score %s for text: %s", score, text)
     if score >= threshold:
         if member.status not in {ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}:
             try:
