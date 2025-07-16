@@ -46,7 +46,7 @@ except Exception as exc:
 modules = [
     "handlers.admin",
     "handlers.panels",
-    "handlers.logging",
+    "handlers.activity_log",
     "handlers.moderation",
 ]
 for name in modules:
