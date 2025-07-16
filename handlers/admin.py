@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message
 from helpers.decorators import require_admin, require_owner
 from helpers.mongo import get_db
-from helpers.abuse import add_word, remove_word
+from helpers.abuse import add_word, remove_word, init_words
 from config import Config
 
 
@@ -116,3 +116,12 @@ def register(app: Client):
             upsert=True,
         )
         await message.reply_text("✅ Word removed from whitelist.", quote=True)
+
+    @app.on_message(filters.command("reloadwords") & filters.group)
+    @require_admin
+    async def reload_banned_words(client: Client, message: Message):
+        try:
+            init_words()
+            await message.reply_text("✅ Banned words reloaded successfully.", quote=True)
+        except Exception as e:
+            await message.reply_text(f"❌ Failed to reload: {e}", quote=True)
