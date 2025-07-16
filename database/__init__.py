@@ -1,149 +1,99 @@
-import aiosqlite
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
+__all__ = [
+    "init_db",
+    "get_or_create_user",
+    "add_warning",
+    "approve_user",
+    "is_approved",
+    "add_log",
+    "upsert_group",
+    "remove_group",
+]
 
 
-async def init_db(db: aiosqlite.Connection):
-    """
-    Initialize database tables if they don't exist.
-    """
-    await db.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
-            global_toxicity REAL DEFAULT 0,
-            warnings INTEGER DEFAULT 0,
-            approved INTEGER DEFAULT 0,
-            mutes INTEGER DEFAULT 0,
-            last_violation TEXT
-        )
-    """)
-    await db.execute("""
-        CREATE TABLE IF NOT EXISTS logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            chat_id INTEGER,
-            reason TEXT,
-            score REAL,
-            timestamp TEXT
-        )
-    """)
-    await db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS groups (
-            id INTEGER PRIMARY KEY,
-            title TEXT,
-            username TEXT,
-            members INTEGER DEFAULT 0,
-            link TEXT
-        )
-    """
-    )
-    await db.commit()
+async def init_db(db: AsyncIOMotorDatabase) -> None:
+    """Create indexes used by the bot."""
+    await db.users.create_index("_id", unique=True)
+    await db.logs.create_index("user_id")
+    await db.groups.create_index("_id", unique=True)
 
 
-async def get_or_create_user(db: aiosqlite.Connection, user_id: int) -> Dict[str, Any]:
-    """
-    Fetch a user by ID, or create a new record if they don't exist.
-    """
-    async with db.execute("SELECT * FROM users WHERE id = ?", (user_id,)) as cur:
-        row = await cur.fetchone()
-        columns = [c[0] for c in cur.description]
-
-    if row:
-        return dict(zip(columns, row))
-
-    await db.execute("""
-        INSERT INTO users (id, global_toxicity, warnings, approved, mutes, last_violation)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (user_id, 0.0, 0, 0, 0, None))
-    await db.commit()
-
-    return {
-        "id": user_id,
+async def get_or_create_user(db: AsyncIOMotorDatabase, user_id: int) -> Dict[str, Any]:
+    """Fetch a user document or create it if missing."""
+    user = await db.users.find_one({"_id": user_id})
+    if user:
+        return user
+    user = {
+        "_id": user_id,
         "global_toxicity": 0.0,
         "warnings": 0,
-        "approved": 0,
+        "approved": False,
         "mutes": 0,
         "last_violation": None,
     }
-
-
-async def add_warning(db: aiosqlite.Connection, user_id: int, score: float) -> Dict[str, Any]:
-    """
-    Increment user's warning count and update toxicity score.
-    """
-    user = await get_or_create_user(db, user_id)
-    user["global_toxicity"] += score
-    user["warnings"] += 1
-    user["last_violation"] = datetime.utcnow().isoformat()
-
-    await db.execute("""
-        UPDATE users
-        SET global_toxicity = ?, warnings = ?, last_violation = ?
-        WHERE id = ?
-    """, (user["global_toxicity"], user["warnings"], user["last_violation"], user_id))
-    await db.commit()
-
+    await db.users.insert_one(user)
     return user
 
 
-async def approve_user(db: aiosqlite.Connection, user_id: int, value: bool) -> Dict[str, Any]:
-    """
-    Approve or unapprove a user.
-    """
+async def add_warning(db: AsyncIOMotorDatabase, user_id: int, score: float) -> Dict[str, Any]:
+    """Increment warning counters and return the updated user."""
+    user = await get_or_create_user(db, user_id)
+    new_global = user["global_toxicity"] + score
+    new_warn = user["warnings"] + 1
+    last_violation = datetime.utcnow().isoformat()
+    await db.users.update_one(
+        {"_id": user_id},
+        {"$set": {"global_toxicity": new_global, "warnings": new_warn, "last_violation": last_violation}},
+    )
+    user.update(global_toxicity=new_global, warnings=new_warn, last_violation=last_violation)
+    return user
+
+
+async def approve_user(db: AsyncIOMotorDatabase, user_id: int, value: bool) -> Dict[str, Any]:
+    """Mark a user as approved or not."""
     await get_or_create_user(db, user_id)
-    await db.execute("""
-        UPDATE users SET approved = ? WHERE id = ?
-    """, (int(value), user_id))
-    await db.commit()
+    await db.users.update_one({"_id": user_id}, {"$set": {"approved": bool(value)}})
     return await get_or_create_user(db, user_id)
 
 
-async def is_approved(db: aiosqlite.Connection, user_id: int) -> bool:
-    """Return True if the user is approved."""
-    async with db.execute("SELECT approved FROM users WHERE id=?", (user_id,)) as cur:
-        row = await cur.fetchone()
-    if row is None:
-        return False
-    return bool(row[0])
+async def is_approved(db: AsyncIOMotorDatabase, user_id: int) -> bool:
+    """Check whether a user has been approved."""
+    doc = await db.users.find_one({"_id": user_id}, {"approved": 1})
+    return bool(doc and doc.get("approved"))
 
 
-async def add_log(db: aiosqlite.Connection, user_id: int, chat_id: int, reason: str, score: float):
-    """
-    Store a violation log for a user.
-    """
-    await db.execute("""
-        INSERT INTO logs (user_id, chat_id, reason, score, timestamp)
-        VALUES (?, ?, ?, ?, ?)
-    """, (user_id, chat_id, reason, score, datetime.utcnow().isoformat()))
-    await db.commit()
+async def add_log(db: AsyncIOMotorDatabase, user_id: int, chat_id: int, reason: str, score: float) -> None:
+    """Record a moderation log entry."""
+    await db.logs.insert_one(
+        {
+            "user_id": user_id,
+            "chat_id": chat_id,
+            "reason": reason,
+            "score": score,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    )
 
 
 async def upsert_group(
-    db: aiosqlite.Connection,
+    db: AsyncIOMotorDatabase,
     chat_id: int,
     title: str,
     username: str | None = None,
     members: int = 0,
     link: str | None = None,
 ) -> None:
-    """Insert or update a group entry."""
-    await db.execute(
-        """
-        INSERT INTO groups (id, title, username, members, link)
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            title=excluded.title,
-            username=excluded.username,
-            members=excluded.members,
-            link=excluded.link
-        """,
-        (chat_id, title, username, members, link),
+    """Insert or update a Telegram group entry."""
+    await db.groups.update_one(
+        {"_id": chat_id},
+        {"$set": {"title": title, "username": username, "members": members, "link": link}},
+        upsert=True,
     )
-    await db.commit()
 
 
-async def remove_group(db: aiosqlite.Connection, chat_id: int) -> None:
+async def remove_group(db: AsyncIOMotorDatabase, chat_id: int) -> None:
     """Remove a group from the database."""
-    await db.execute("DELETE FROM groups WHERE id=?", (chat_id,))
-    await db.commit()
+    await db.groups.delete_one({"_id": chat_id})
