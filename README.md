@@ -15,9 +15,11 @@ Modern moderation bot built with **Pyrogram** and **MongoDB**.
 ## Commands
 - `/start` `/menu` `/help` – show control panel
 - `/ping` – check bot status
-- `/approve` `/unapprove` `/approved` `/rmwarn` – admin tools
-- `/broadcast <text>` – owner broadcast
-- `/reloadwords` – reload the banned words list
+- `/off_text_delete` – toggle text filter
+- `/off_media_delete` – toggle media caption filter
+- `/status` – show filter status
+- `/banlist` – list banned users
+- `/unban <user_id>` – remove user from ban list
 
 ## Usage
 1. Start the bot in a private chat or add it to a group.
