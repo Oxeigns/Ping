@@ -4,7 +4,11 @@ from pyrogram.types import Message
 from config import Config
 from helpers.mongo import get_db
 from helpers.decorators import catch_errors
-from .start import send_welcome
+# "send_welcome" lives in panels.py where the /start command is
+# implemented. The previous import from a non-existent "start" module
+# caused a ModuleNotFoundError during runtime. Import it from panels
+# instead so group join events can reuse the same welcome message.
+from .panels import send_welcome
 
 logger = logging.getLogger(__name__)
 
