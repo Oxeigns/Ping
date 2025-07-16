@@ -13,6 +13,8 @@ from helpers.mongo import get_db
 from helpers.abuse import load_words
 from config import Config
 
+logger = logging.getLogger(__name__)
+
 BANNED_WORDS = load_words()
 logger.info("Loaded %d banned words", len(BANNED_WORDS))
 
@@ -26,8 +28,6 @@ for cat, words in _CATEGORY_EXTRA.items():
     for w in words:
         WORD_CATEGORY[w] = cat
         BANNED_WORDS.add(w)
-
-logger = logging.getLogger(__name__)
 
 
 def translate_text(text: str) -> str:
