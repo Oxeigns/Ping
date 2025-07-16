@@ -117,6 +117,24 @@ def register(app: Client):
         )
         await message.reply_text("✅ Word removed from whitelist.", quote=True)
 
+    @app.on_message(filters.command("filter") & filters.group)
+    @require_admin
+    async def toggle_filter(client: Client, message: Message):
+        current = await db.group_settings.find_one({"chat_id": message.chat.id}) or {}
+        if len(message.command) < 2:
+            state = "on" if current.get("filter_enabled", True) else "off"
+            await message.reply_text(f"Current filter state: {state}", quote=True)
+            return
+        enabled = message.command[1].lower() != "off"
+        await db.group_settings.update_one(
+            {"chat_id": message.chat.id},
+            {"$set": {"filter_enabled": enabled}, "$setOnInsert": {"chat_id": message.chat.id}},
+            upsert=True,
+        )
+        await message.reply_text(
+            f"✅ Filter {'enabled' if enabled else 'disabled'}.", quote=True
+        )
+
     @app.on_message(filters.command("reloadwords") & filters.group)
     @require_admin
     async def reload_banned_words(client: Client, message: Message):

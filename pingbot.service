@@ -6,7 +6,10 @@ After=network.target
 WorkingDirectory=/opt/pingbot
 ExecStart=/usr/bin/python3 run.py
 Restart=always
+RestartSec=5
 EnvironmentFile=/opt/pingbot/.env
+StandardOutput=append:/var/log/pingbot.log
+StandardError=append:/var/log/pingbot.log
 
 [Install]
 WantedBy=multi-user.target
