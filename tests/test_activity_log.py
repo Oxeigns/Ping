@@ -1,6 +1,6 @@
 import importlib
 
-logmod = importlib.import_module("handlers.logging")
+logmod = importlib.import_module("handlers.activity_log")
 
 
 class Dummy:

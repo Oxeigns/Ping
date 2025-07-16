@@ -12,7 +12,7 @@ def register_all(app: Client):
         autodelete,
         broadcast,
         groups,
-        logging as logmod,
+        activity_log as logmod,
         moderation,
         panels,
     )
@@ -30,4 +30,4 @@ def register_all(app: Client):
     moderation.register(app)
     logger.info("[REGISTERED] moderation.py ✅")
     logmod.register(app)
-    logger.info("[REGISTERED] logging.py ✅")
+    logger.info("[REGISTERED] activity_log.py ✅")
