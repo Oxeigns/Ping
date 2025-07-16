@@ -1,8 +1,12 @@
 import importlib
 import os
-from dotenv import load_dotenv
+from pathlib import Path
+from dotenv import load_dotenv, dotenv_values
 
-load_dotenv()
+if Path('.env').exists():
+    load_dotenv()
+else:
+    raise SystemExit(".env file missing; aborting deploy")
 
 if os.getenv("ENV") == "production" and os.getenv("CONFIRM_DEPLOY") != "yes":
     raise SystemExit("Deployment aborted: set CONFIRM_DEPLOY=yes to continue in production")
@@ -15,9 +19,14 @@ REQUIRED_KEYS = [
     "LOG_CHANNEL_ID",
 ]
 
+env = dotenv_values('.env') | os.environ
 for key in REQUIRED_KEYS:
-    if not os.getenv(key):
+    if not env.get(key):
         raise SystemExit(f"Missing required env var: {key}")
+if not str(env.get('API_ID', '')).isdigit():
+    raise SystemExit("API_ID must be an integer")
+if env.get('API_HASH') and len(env['API_HASH']) < 30:
+    raise SystemExit("API_HASH looks invalid")
 
 try:
     from PIL import Image
@@ -69,11 +78,21 @@ class DummyApp:
 from handlers import register_all
 from handlers import moderation
 
-app = DummyApp()
-register_all(app)
-moderation.register(app)
 
-if app.messages == 0:
-    raise SystemExit("message handlers not registered")
+def main() -> None:
+    app = DummyApp()
+    register_all(app)
+    moderation.register(app)
 
-print("Predeploy checks passed")
+    if app.messages == 0:
+        raise SystemExit("message handlers not registered")
+
+    print("Predeploy checks passed")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        print("Predeploy failed - rollback", exc)
+        raise SystemExit(1) from exc

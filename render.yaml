@@ -3,5 +3,7 @@ services:
     name: telegram-moderation-bot
     env: python
     plan: free
-    buildCommand: pip install --no-cache-dir --only-binary=:all: -r requirements.txt
+    buildCommand: |
+      python predeploy.py && \
+      pip install --no-cache-dir --only-binary=:all: -r requirements.txt
     startCommand: "python run.py"
