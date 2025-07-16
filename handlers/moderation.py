@@ -13,6 +13,7 @@ from helpers.mongo import get_db
 from helpers.abuse import load_words
 from config import Config
 
+# initialize module logger before any setup that may log messages
 logger = logging.getLogger(__name__)
 
 BANNED_WORDS = load_words()
