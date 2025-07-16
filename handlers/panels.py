@@ -1,8 +1,6 @@
 from datetime import datetime
 import logging
-from datetime import datetime
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, Message
+from helpers.compat import Client, CallbackQuery, Message, filters
 from config import Config
 from helpers import safe_edit, send_message_safe
 from helpers.panels import (

@@ -1,6 +1,13 @@
 from datetime import datetime
 from typing import Any, Dict
-from motor.motor_asyncio import AsyncIOMotorDatabase
+try:  # pragma: no cover - optional dependency
+    from motor.motor_asyncio import AsyncIOMotorDatabase
+    MOTOR_AVAILABLE = True
+except Exception:  # pragma: no cover - provide minimal stub
+    MOTOR_AVAILABLE = False
+
+    class AsyncIOMotorDatabase:  # pragma: no cover
+        pass
 
 __all__ = [
     "init_db",

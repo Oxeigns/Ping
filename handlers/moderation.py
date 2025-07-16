@@ -1,9 +1,12 @@
 import asyncio
 import logging
-from googletrans import Translator
-from pyrogram import Client, filters
-from pyrogram.enums import ChatMemberStatus
-from pyrogram.types import Message
+from helpers.compat import (
+    Client,
+    Message,
+    Translator,
+    ChatMemberStatus,
+    filters,
+)
 
 from helpers import get_state, require_admin, send_message_safe
 from helpers.abuse import BANNED_WORDS, abuse_score, init_words

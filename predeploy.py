@@ -52,7 +52,14 @@ modules = [
 for name in modules:
     importlib.import_module(name)
 
-from pyrogram.handlers import MessageHandler, CallbackQueryHandler
+try:  # pragma: no cover - optional dependency
+    from pyrogram.handlers import MessageHandler, CallbackQueryHandler
+except Exception:  # pragma: no cover - fallback stubs
+    class MessageHandler:  # simple placeholders for isinstance checks
+        pass
+
+    class CallbackQueryHandler:
+        pass
 
 
 class DummyApp:

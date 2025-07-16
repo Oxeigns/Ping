@@ -1,7 +1,5 @@
 import logging
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from pyrogram.errors import UserIsBlocked
+from helpers.compat import Client, Message, UserIsBlocked, filters
 from helpers.mongo import get_db
 from config import Config
 

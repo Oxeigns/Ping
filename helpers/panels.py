@@ -1,4 +1,13 @@
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+try:  # pragma: no cover - optional dependency
+    from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+except Exception:  # pragma: no cover - define minimal stubs
+    class InlineKeyboardButton:
+        def __init__(self, text: str, callback_data: str | None = None) -> None:
+            self.text = text
+            self.callback_data = callback_data
+
+    class InlineKeyboardMarkup(list):
+        pass
 
 PREFIX = "panel:"
 

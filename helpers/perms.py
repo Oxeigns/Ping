@@ -1,6 +1,4 @@
-from pyrogram import Client
-from pyrogram.types import Message
-from pyrogram.enums import ChatMemberStatus
+from helpers.compat import Client, Message, ChatMemberStatus
 
 async def is_admin(client: Client, message: Message) -> bool:
     if not message.chat or not message.from_user:
