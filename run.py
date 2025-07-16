@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from pyrogram import Client, idle
-from config import Config
+from config import Config, validate
 from helpers.mongo import connect
 from handlers import register_all
 
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    Config.validate()
+    validate()
     logger.info("[INFO] Connecting to MongoDB...")
     db = await connect(Config.MONGO_URI)
     logger.info("[INFO] Initializing bot...")
