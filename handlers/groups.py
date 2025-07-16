@@ -4,6 +4,7 @@ from pyrogram.types import Message
 from config import Config
 from helpers.mongo import get_db
 from helpers.decorators import catch_errors
+from .start import send_welcome
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,10 @@ def register(app: Client):
                     await client.send_message(Config.LOG_CHANNEL, text)
                 except Exception as exc:
                     logger.warning("Failed to send log: %s", exc)
+            try:
+                await send_welcome(message, me.first_name)
+            except Exception:
+                pass
 
     @app.on_message(filters.left_chat_member & filters.group)
     @catch_errors
