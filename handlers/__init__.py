@@ -1,5 +1,5 @@
 import logging
-from pyrogram import Client
+from helpers.compat import Client
 
 
 logger = logging.getLogger(__name__)

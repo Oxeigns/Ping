@@ -2,8 +2,7 @@
 
 import logging
 import re
-from pyrogram import Client
-from pyrogram.types import Message
+from helpers.compat import Client, Message
 from config import Config
 
 logger = logging.getLogger(__name__)

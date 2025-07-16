@@ -1,8 +1,7 @@
 import asyncio
 import contextlib
 import logging
-from pyrogram import Client, filters
-from pyrogram.types import Message
+from helpers.compat import Client, Message, filters
 from helpers.mongo import get_db
 
 

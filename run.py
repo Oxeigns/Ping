@@ -1,6 +1,12 @@
 import asyncio
 import logging
-from pyrogram import Client, idle
+from helpers.compat import Client
+try:  # pragma: no cover - optional pyrogram dependency
+    from pyrogram import idle  # type: ignore
+except Exception:  # pragma: no cover - stub when pyrogram missing
+    async def idle() -> None:
+        """Placeholder idle when Pyrogram is unavailable."""
+        await asyncio.Event().wait()
 from config import Config, validate
 from helpers.mongo import connect
 from handlers import register_all

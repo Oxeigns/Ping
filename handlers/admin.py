@@ -1,5 +1,4 @@
-from pyrogram import Client, filters
-from pyrogram.types import Message
+from helpers.compat import Client, Message, filters
 from helpers.decorators import require_admin, require_owner
 from helpers.mongo import get_db
 from helpers.abuse import add_word, remove_word, init_words

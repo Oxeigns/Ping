@@ -1,6 +1,6 @@
 import functools
 import logging
-from pyrogram.types import Message
+from helpers.compat import Message
 from config import Config
 
 logger = logging.getLogger(__name__)
