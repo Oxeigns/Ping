@@ -1,4 +1,4 @@
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 PREFIX = "panel:"
 
@@ -6,11 +6,16 @@ PREFIX = "panel:"
 def main_panel() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🔧 Moderation", callback_data=f"{PREFIX}mod")],
-            [InlineKeyboardButton("⚙️ Settings", callback_data=f"{PREFIX}settings")],
-            [InlineKeyboardButton("👮 Admin Tools", callback_data=f"{PREFIX}admin")],
-            [InlineKeyboardButton("📊 Status", callback_data=f"{PREFIX}status")],
-            [InlineKeyboardButton("ℹ️ Help", callback_data=f"{PREFIX}help")],
+            [
+                InlineKeyboardButton("🛡 Moderation", callback_data=f"{PREFIX}mod"),
+                InlineKeyboardButton("📊 Stats", callback_data=f"{PREFIX}stats"),
+            ],
+            [InlineKeyboardButton("📢 Broadcast", callback_data=f"{PREFIX}broadcast")],
+            [
+                InlineKeyboardButton("✅ Developer", callback_data=f"{PREFIX}dev"),
+                InlineKeyboardButton("⚙️ Settings", callback_data=f"{PREFIX}settings"),
+            ],
+            [InlineKeyboardButton("📄 Help", callback_data=f"{PREFIX}help")],
             [InlineKeyboardButton("🚪 Exit", callback_data=f"{PREFIX}exit")],
         ]
     )
