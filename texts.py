@@ -1,3 +1,19 @@
-ABUSE_WARNING = "\u26A0\uFE0F Your message was deleted due to abusive content. Please follow the group rules."
-DEVELOPER_LABEL = "\ud83d\udc64 Developer"
-HELP_TEXT = """Available commands:\n/approve @username - approve user\n/unapprove @username - revoke approval\n/rmwarn <user_id> - remove a warning\n/status - show bot status\n/broadcast <text> - send announcement\n/menu - open control panel"""
+# ⚠️ Abuse warning sent to users
+ABUSE_WARNING = (
+    "⚠️ <b>Your message was deleted due to abusive content.</b>\n"
+    "Please follow the group rules to avoid further actions."
+)
+
+# 👤 Developer label used in control panel
+DEVELOPER_LABEL = "👤 Developer"
+
+# 📘 Help text shown when /help or panel:help is triggered
+HELP_TEXT = (
+    "📘 <b>Available Commands</b>:\n\n"
+    "✅ <code>/approve @username</code> – Approve a user\n"
+    "🚫 <code>/unapprove @username</code> – Revoke approval\n"
+    "⚠️ <code>/rmwarn &lt;user_id&gt;</code> – Remove a warning\n"
+    "📶 <code>/status</code> – Show bot's current status\n"
+    "📢 <code>/broadcast &lt;text&gt;</code> – Send announcement to all groups\n"
+    "📂 <code>/menu</code> – Open the control panel"
+)
