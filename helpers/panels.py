@@ -1,6 +1,6 @@
-try:  # pragma: no cover - optional dependency
+try:  # Optional dependency
     from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-except Exception:  # pragma: no cover - define minimal stubs
+except Exception:
     class InlineKeyboardButton:
         def __init__(self, text: str, callback_data: str | None = None) -> None:
             self.text = text
@@ -16,50 +16,50 @@ PREFIX = "panel:"
 
 def abuse_status(chat_id: int) -> str:
     s = get_state(chat_id)
-    on = s.text_filter or s.media_filter
-    return "ON" if on else "OFF"
+    return "ON" if s.text_filter or s.media_filter else "OFF"
 
 
 def main_panel() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton("🛡 Abuse Filter", callback_data=f"{PREFIX}mod")],
-            [InlineKeyboardButton("📢 Broadcast", callback_data=f"{PREFIX}broadcast")],
-            [InlineKeyboardButton("📶 Status", callback_data=f"{PREFIX}stats")],
-            [InlineKeyboardButton("⚙️ Settings", callback_data=f"{PREFIX}settings")],
-            [InlineKeyboardButton("❓ Help", callback_data=f"{PREFIX}help")],
-            [InlineKeyboardButton("👤 Developer", callback_data=f"{PREFIX}dev")],
-            [InlineKeyboardButton("🚪 Exit", callback_data=f"{PREFIX}exit")],
-        ]
-    )
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🛡 Abuse Filter", callback_data=f"{PREFIX}mod")],
+        [InlineKeyboardButton("📢 Broadcast", callback_data=f"{PREFIX}broadcast")],
+        [InlineKeyboardButton("📶 Status", callback_data=f"{PREFIX}stats")],
+        [InlineKeyboardButton("🧑‍💼 Admin Commands", callback_data=f"{PREFIX}admin")],
+        [InlineKeyboardButton("👤 Developer", callback_data=f"{PREFIX}dev")],
+        [InlineKeyboardButton("❌ Close Panel", callback_data=f"{PREFIX}exit")],
+    ])
 
 
 def moderation_panel(chat_id: int) -> InlineKeyboardMarkup:
     state = get_state(chat_id)
     txt = "ON" if state.text_filter else "OFF"
     med = "ON" if state.media_filter else "OFF"
-    return InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton(f"Text Filter: {txt}", callback_data=f"{PREFIX}text")],
-            [InlineKeyboardButton(f"Media Filter: {med}", callback_data=f"{PREFIX}media")],
-            [InlineKeyboardButton("🔙 Back", callback_data=f"{PREFIX}main")],
-        ]
-    )
-
-
-def settings_panel() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [[InlineKeyboardButton("🔙 Back", callback_data=f"{PREFIX}main")]]
-    )
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"Text Filter: {txt}", callback_data=f"{PREFIX}text")],
+        [InlineKeyboardButton(f"Media Filter: {med}", callback_data=f"{PREFIX}media")],
+        [InlineKeyboardButton("📃 Whitelist", callback_data=f"{PREFIX}whitelist")],
+        [InlineKeyboardButton("🔙 Back", callback_data=f"{PREFIX}main")],
+    ])
 
 
 def admin_panel() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [[InlineKeyboardButton("🔙 Back", callback_data=f"{PREFIX}main")]]
-    )
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ Approve", callback_data=f"{PREFIX}sendapprove")],
+        [InlineKeyboardButton("⚠️ Remove Warning", callback_data=f"{PREFIX}rmwarn")],
+        [InlineKeyboardButton("🚫 Unban User", callback_data=f"{PREFIX}unban")],
+        [InlineKeyboardButton("🔙 Back", callback_data=f"{PREFIX}main")],
+    ])
 
 
 def help_panel() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [[InlineKeyboardButton("🔙 Back", callback_data=f"{PREFIX}main")]]
-    )
+    # Reserved if needed in future (not currently shown in main panel)
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back", callback_data=f"{PREFIX}main")]
+    ])
+
+
+def settings_panel() -> InlineKeyboardMarkup:
+    # Deprecated — not included in main panel anymore
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back", callback_data=f"{PREFIX}main")]
+    ])
