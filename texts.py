@@ -7,7 +7,7 @@ ABUSE_WARNING = (
 # 👤 Developer label used in control panel
 DEVELOPER_LABEL = "👤 Developer"
 
-# 📘 Help text shown when /help or panel:help is triggered
+# 📘 Help text shown when /help is triggered
 HELP_TEXT = (
     "📘 <b>Available Commands</b>:\n\n"
     "✅ <code>/approve @username</code> – Approve a user\n"

@@ -1,14 +1,12 @@
 from datetime import datetime
 import logging
-from helpers.compat import Client, CallbackQuery, Message, filters
+from helpers.compat import Client, CallbackQuery, Message, ChatMemberStatus, filters
 from config import Config
 from helpers import safe_edit, send_message_safe
 from helpers.panels import (
     admin_panel,
-    help_panel,
     main_panel,
     moderation_panel,
-    settings_panel,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,6 +72,15 @@ def register(app: Client):
         chat_id = query.message.chat.id
         user_first = query.from_user.first_name
 
+        async def is_admin() -> bool:
+            if query.from_user.id == Config.OWNER_ID:
+                return True
+            try:
+                member = await client.get_chat_member(chat_id, query.from_user.id)
+                return member.status in {ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}
+            except Exception:
+                return False
+
         try:
             if data == "panel:mod":
                 await safe_edit(
@@ -84,24 +91,39 @@ def register(app: Client):
             elif data == "panel:stats":
                 await client.send_message(chat_id, "/status")
             elif data == "panel:broadcast":
+                if not await is_admin():
+                    await query.answer("❌ You are not allowed to broadcast.", show_alert=True)
+                    return
                 await client.send_message(chat_id, "/broadcast")
+            elif data == "panel:admin":
+                await safe_edit(query.message, "**Admin Tools**", reply_markup=admin_panel())
             elif data == "panel:dev":
                 await safe_edit(
                     query.message,
                     f"<b>Developer:</b> <a href='{Config.DEV_URL}'>{Config.DEV_NAME}</a>",
                     reply_markup=main_panel(),
                 )
-            elif data == "panel:settings":
-                await safe_edit(query.message, "**Settings**", reply_markup=settings_panel())
-            elif data == "panel:admin":
-                await safe_edit(query.message, "**Admin Tools**", reply_markup=admin_panel())
-            elif data == "panel:help":
-                await safe_edit(query.message, "**Help & Commands**", reply_markup=help_panel())
             elif data == "panel:text":
                 await client.send_message(chat_id, "/off_text_delete")
             elif data == "panel:media":
                 await client.send_message(chat_id, "/off_media_delete")
-            elif data in {"panel:main", "panel:exit"}:
+            elif data == "panel:whitelist":
+                await client.send_message(
+                    chat_id,
+                    "Usage: /whitelist <word> — only owners can whitelist abusive words.",
+                )
+            elif data == "panel:sendapprove":
+                if not await is_admin():
+                    await query.answer("❌ You are not allowed to approve users.", show_alert=True)
+                    return
+                await client.send_message(chat_id, "/approve @username")
+            elif data == "panel:rmwarn":
+                await client.send_message(chat_id, "/rmwarn <user_id>")
+            elif data == "panel:unban":
+                await client.send_message(chat_id, "/unban <user_id>")
+            elif data == "panel:exit":
+                await safe_edit(query.message, "👋 Panel closed.", reply_markup=None)
+            elif data == "panel:main":
                 me = await client.get_me()
                 await safe_edit(
                     query.message,
