@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Configuration models and helpers."""
 
-from pydantic import Field, ValidationError, field_validator
+from pydantic import Field, ValidationError, field_validator, ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -25,9 +25,7 @@ class Settings(BaseSettings):
     WARNING_EMOJI: str = Field("⚠️")
     SUDO_USERS: set[int] = Field(default_factory=set)
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = ConfigDict(env_file=".env", case_sensitive=False)
 
     @field_validator("SUDO_USERS", mode="before")
     def _split_sudo(cls, v: str | set[int] | None) -> set[int]:
