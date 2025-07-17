@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from pydantic import BaseSettings, Field, ValidationError, validator
+"""Configuration models and helpers."""
+
+from pydantic import Field, ValidationError, field_validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -26,7 +29,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
 
-    @validator("SUDO_USERS", pre=True)
+    @field_validator("SUDO_USERS", mode="before")
     def _split_sudo(cls, v: str | set[int] | None) -> set[int]:
         if not v:
             return set()
