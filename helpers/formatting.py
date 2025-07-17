@@ -3,6 +3,7 @@
 import logging
 import re
 from helpers.compat import Client, Message
+from pyrogram.enums import ParseMode
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -17,13 +18,13 @@ async def safe_edit(message: Message, text: str, **kwargs) -> None:
     """Edit a message trying MarkdownV2, then HTML, then plain text."""
     try:
         await message.edit_text(
-            escape_markdown(text), parse_mode="MarkdownV2", **kwargs
+            escape_markdown(text), parse_mode=ParseMode.MARKDOWN, **kwargs
         )
         return
     except Exception as e:
         logger.warning("Markdown edit failed: %s", e)
     try:
-        await message.edit_text(text, parse_mode="HTML", **kwargs)
+        await message.edit_text(text, parse_mode=ParseMode.HTML, **kwargs)
         return
     except Exception as e:
         logger.warning("HTML edit failed: %s", e)
@@ -38,14 +39,14 @@ async def send_message_safe(target: Message | Client, text: str, **kwargs) -> Me
     try:
         formatted = escape_markdown(text)
         if reply_func:
-            return await reply_func(formatted, parse_mode="MarkdownV2", **kwargs)
-        return await send_func(formatted, parse_mode="MarkdownV2", **kwargs)
+            return await reply_func(formatted, parse_mode=ParseMode.MARKDOWN, **kwargs)
+        return await send_func(formatted, parse_mode=ParseMode.MARKDOWN, **kwargs)
     except Exception as e:
         logger.debug("Markdown send failed: %s", e)
     try:
         if reply_func:
-            return await reply_func(text, parse_mode="HTML", **kwargs)
-        return await send_func(text, parse_mode="HTML", **kwargs)
+            return await reply_func(text, parse_mode=ParseMode.HTML, **kwargs)
+        return await send_func(text, parse_mode=ParseMode.HTML, **kwargs)
     except Exception as e:
         logger.debug("HTML send failed: %s", e)
     if reply_func:
