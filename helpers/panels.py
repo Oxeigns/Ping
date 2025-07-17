@@ -51,15 +51,3 @@ def admin_panel() -> InlineKeyboardMarkup:
     ])
 
 
-def help_panel() -> InlineKeyboardMarkup:
-    # Reserved if needed in future (not currently shown in main panel)
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back", callback_data=f"{PREFIX}main")]
-    ])
-
-
-def settings_panel() -> InlineKeyboardMarkup:
-    # Deprecated — not included in main panel anymore
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back", callback_data=f"{PREFIX}main")]
-    ])

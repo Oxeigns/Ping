@@ -17,7 +17,6 @@ def register_all(app: Client):
         panels,
         status,
         help as helpmod,
-        settings,
     )
 
     panels.register(app)
@@ -36,7 +35,5 @@ def register_all(app: Client):
     logger.info("[REGISTERED] moderation.py ✅")
     status.register(app)
     logger.info("[REGISTERED] status.py ✅")
-    settings.register(app)
-    logger.info("[REGISTERED] settings.py ✅")
     logmod.register(app)
     logger.info("[REGISTERED] activity_log.py ✅")
