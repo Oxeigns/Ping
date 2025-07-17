@@ -25,12 +25,15 @@ REQUIRED_KEYS = [
     "API_HASH",
     "OWNER_ID",
     "LOG_CHANNEL_ID",
+    "MODLOG_CHANNEL_ID",
+    "DEV_URL",
 ]
 
 env = dotenv_values(".env") | os.environ
-for key in REQUIRED_KEYS:
-    if not env.get(key):
-        raise SystemExit(f"Missing required env var: {key}")
+missing = [k for k in REQUIRED_KEYS if not env.get(k)]
+if missing:
+    print(f"[CONFIG ERROR] Missing required env vars: {', '.join(missing)}")
+    raise SystemExit(1)
 if not str(env.get("API_ID", "")).isdigit():
     raise SystemExit("API_ID must be an integer")
 if env.get("API_HASH") and len(env["API_HASH"]) < 30:
@@ -48,6 +51,9 @@ modules = [
     "handlers.panels",
     "handlers.activity_log",
     "handlers.moderation",
+    "handlers.status",
+    "handlers.help",
+    "handlers.settings",
 ]
 for name in modules:
     importlib.import_module(name)

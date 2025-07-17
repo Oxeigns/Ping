@@ -3,7 +3,12 @@
 import logging
 import re
 from helpers.compat import Client, Message
-from pyrogram.enums import ParseMode
+try:  # pragma: no cover - optional dependency
+    from pyrogram.enums import ParseMode
+except Exception:  # pragma: no cover - simple stub
+    class ParseMode:
+        MARKDOWN = "markdown"
+        HTML = "html"
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -15,7 +20,8 @@ def escape_markdown(text: str) -> str:
     return MD_V2_SPECIAL.sub(r"\\\1", text)
 
 async def safe_edit(message: Message, text: str, **kwargs) -> None:
-    """Edit a message trying MarkdownV2, then HTML, then plain text."""
+    """Edit ``message`` with Markdown, falling back to HTML and plain text."""
+    kwargs.pop("parse_mode", None)
     try:
         await message.edit_text(
             escape_markdown(text), parse_mode=ParseMode.MARKDOWN, **kwargs
@@ -28,11 +34,15 @@ async def safe_edit(message: Message, text: str, **kwargs) -> None:
         return
     except Exception as e:
         logger.warning("HTML edit failed: %s", e)
-    await message.edit_text(text, **kwargs)
+    try:
+        await message.edit_text(text, **kwargs)
+    except Exception as e:
+        logger.error("Plain edit failed: %s", e)
 
 
 async def send_message_safe(target: Message | Client, text: str, **kwargs) -> Message:
-    """Reply or send a message using MarkdownV2 -> HTML -> plain text."""
+    """Reply or send a message using Markdown -> HTML -> plain text."""
+    kwargs.pop("parse_mode", None)
     reply_func = getattr(target, "reply", None)
     send_func = getattr(target, "send_message", None)
 

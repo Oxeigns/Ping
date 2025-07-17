@@ -1,7 +1,6 @@
 from datetime import datetime
 import logging
 from helpers.compat import Client, CallbackQuery, Message, filters
-from pyrogram.enums import ParseMode
 from config import Config
 from helpers import safe_edit, send_message_safe
 from helpers.panels import (
@@ -36,11 +35,10 @@ async def send_welcome(message: Message, bot_name: str) -> None:
             Config.PANEL_IMAGE,
             caption=text,
             reply_markup=main_panel(),
-            parse_mode=ParseMode.HTML,
         )
     else:
         await send_message_safe(
-            message, text, reply_markup=main_panel(), parse_mode=ParseMode.HTML
+            message, text, reply_markup=main_panel()
         )
 
 
@@ -68,7 +66,9 @@ def register(app: Client):
         data = query.data
         if data == "panel:mod":
             await safe_edit(
-                query.message, "**Moderation**", reply_markup=moderation_panel()
+                query.message,
+                "**Abuse Filter**\nDetects and deletes abusive messages. Warns the user automatically.",
+                reply_markup=moderation_panel(query.message.chat.id),
             )
         elif data == "panel:stats":
             await client.send_message(query.message.chat.id, "/status")
@@ -83,7 +83,6 @@ def register(app: Client):
                 query.message,
                 f"<b>Developer:</b> <a href='{Config.DEV_URL}'>{Config.DEV_NAME}</a>",
                 reply_markup=main_panel(),
-                parse_mode=ParseMode.HTML,
             )
         elif data == "panel:settings":
             await safe_edit(
