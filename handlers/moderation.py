@@ -9,40 +9,27 @@ from helpers.compat import (
 )
 
 from helpers import get_state, require_admin, send_message_safe
+import texts
 from helpers.abuse import BANNED_WORDS, abuse_score, init_words
-from database import add_warning, add_log, get_or_create_user, is_approved
+from database import add_log, get_or_create_user, is_approved
 from config import Config
 
 init_words()
 logger = logging.getLogger(__name__)
 translator = Translator()
-WARN_THRESHOLD = 3
-
-
-async def process_violation(client: Client, message: Message, score: float) -> None:
-    user_id = message.from_user.id if message.from_user else 0
-    logger.warning("violation by %s score %.2f", user_id, score)
+async def process_violation(client: Client, message: Message, reason: str) -> None:
+    user = message.from_user
+    user_id = user.id if user else 0
+    chat_title = message.chat.title or message.chat.id
+    logger.warning("\u274C deleted message from %s in %s (%s)", user_id, chat_title, reason)
     db = client.db
-    await add_log(db, user_id, message.chat.id, "abuse", score)
-    user = await add_warning(db, user_id, score)
-    if user["warnings"] >= WARN_THRESHOLD:
-        try:
-            await client.restrict_chat_member(message.chat.id, user_id, permissions={})
-        except Exception as exc:
-            logger.error("restrict failed: %s", exc)
-        await client.send_message(
-            message.chat.id, "🔇 User muted for repeated violations."
-        )
-    else:
-        await client.send_message(
-            message.chat.id, f"⚠️ Warning {user['warnings']} issued."
-        )
+    await add_log(db, user_id, message.chat.id, "abuse", 1.0)
+    await send_message_safe(message.chat, texts.ABUSE_WARNING)
     if Config.MODLOG_CHANNEL:
+        msg_type = "photo" if message.photo else "video" if message.video else "text"
+        log = f"❌ Deleted {msg_type} from {user_id} in {chat_title} - {reason}"
         try:
-            await client.send_message(
-                Config.MODLOG_CHANNEL,
-                f"Violation in {message.chat.id} by {user_id} score {score:.2f}",
-            )
+            await client.send_message(Config.MODLOG_CHANNEL, log)
         except Exception as exc:
             logger.debug("modlog failed: %s", exc)
 
@@ -101,17 +88,6 @@ def register(app: Client):
         else:
             await message.reply_text("User not in ban list")
 
-    @app.on_message(filters.command("help") & (filters.group | filters.private))
-    async def help_cmd(_, message: Message):
-        text = (
-            "Available commands:\n"
-            "/off_text_delete - toggle text filter\n"
-            "/off_media_delete - toggle media filter\n"
-            "/status - show current status\n"
-            "/banlist - list banned users\n"
-            "/unban <user_id> - unban a user"
-        )
-        await message.reply_text(text)
 
     @app.on_message(filters.group & (filters.text | filters.caption))
     async def check_message(client: Client, message: Message):
@@ -141,15 +117,11 @@ def register(app: Client):
             scan_text = text
 
         score = abuse_score(scan_text)
-        ratio = score / max(len(scan_text.split()), 1)
-        if ratio == 0:
+        if score == 0:
             return
 
         member = await client.get_chat_member(message.chat.id, message.from_user.id)
         if member.status in {ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}:
-            await send_message_safe(
-                message, "⚠️ Dear admin, please avoid restricted terms."
-            )
             return
 
         try:
@@ -157,4 +129,4 @@ def register(app: Client):
         except Exception as exc:
             logger.debug("delete failed: %s", exc)
 
-        await process_violation(client, message, ratio)
+        await process_violation(client, message, "abusive content")
